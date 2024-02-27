@@ -37,33 +37,45 @@ def get_paper_from_liion(material, liion_data):
         if material == liion_material or is_same_formula(material, liion_material):
             return liion_data[j, 2]
     return None
+
+def get_paper_from_unidentified(material, uni_data):
+    for j, uni_material in enumerate(uni_data[:,0]):
+        if material == uni_material or is_same_formula(material, uni_material):
+            return uni_data[j, 1]
+    return None
+
+if __name__ == "__main__":
     
-homin_database = "20231204v1.csv"
-laskowski_database = "laskowski_semi-fromatted.csv"
-liion_database = "LiIonDatabase.csv"
-
-homin_header = open(homin_database, "r").readline().strip().split(",")
-homin_data = np.genfromtxt(homin_database, delimiter=',', dtype=str, skip_header=1)
-laskowski_data = np.genfromtxt(laskowski_database, delimiter=',', dtype=str)
-liion_data = np.genfromtxt(liion_database, delimiter=',', dtype=str, skip_header=1)
-
-new_homin_data = np.concatenate((homin_data,np.ones((homin_data.shape[0],1))), axis=1)
-
-not_found_count = 0
-not_found = open("unidentified.txt", "w")
-
-for i, material in enumerate(homin_data[:,0]):
-    paper_info = get_paper_from_laskowski(material, laskowski_data)
-    if paper_info is None:
-        paper_info = get_paper_from_liion(material, liion_data)
+    homin_database = "20231204v1.csv"
+    laskowski_database = "laskowski_semi-fromatted.csv"
+    liion_database = "LiIonDatabase.csv"
+    uni_datatbase = "unidentified_with_refs.csv"
+    
+    homin_header = open(homin_database, "r").readline().strip().split(",")
+    homin_data = np.genfromtxt(homin_database, delimiter=',', dtype=str, skip_header=1)
+    laskowski_data = np.genfromtxt(laskowski_database, delimiter=',', dtype=str)
+    liion_data = np.genfromtxt(liion_database, delimiter=',', dtype=str, skip_header=1)
+    uni_data = np.genfromtxt(uni_datatbase, delimiter=',', dtype=str)
+    
+    new_homin_data = np.concatenate((homin_data,np.ones((homin_data.shape[0],1))), axis=1)
+    
+    not_found_count = 0
+    not_found = open("unidentified.txt", "w")
+    
+    for i, material in enumerate(homin_data[:,0]):
+        paper_info = get_paper_from_laskowski(material, laskowski_data)
         if paper_info is None:
-            not_found_count += 1
-            print(material, file=not_found) 
-    new_homin_data[i,-1] = paper_info
+            paper_info = get_paper_from_liion(material, liion_data)
+            if paper_info is None:
+                paper_info = get_paper_from_unidentified(material, uni_data)
+                if paper_info is None:
+                    not_found_count += 1
+        new_homin_data[i,-1] = paper_info
+        
+    not_found.close()
+                
+    np.savetxt("20231204v1_with_paper_info.csv", new_homin_data, delimiter=",", fmt="%s", header=",".join(homin_header) + ", paper")
     
-not_found.close()
-            
-np.savetxt("20231204v1_with_paper_info.csv", new_homin_data, delimiter=",", fmt="%s", header=",".join(homin_header) + ", paper")
-
-print("Not found count: ", not_found_count)
-print("Total count: ", len(homin_data[:,0]))
+    print("Not found count: ", not_found_count)
+    print("Total count: ", len(homin_data[:,0]))
+    

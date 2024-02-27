@@ -16,6 +16,6 @@ This data set has been constructed by Homin Shin and Rhiannon Hendley, using as 
 - `20240224v1.csv`: Processed string composition into elements and counts
 - `20240224v1.csv`: Log10 conversion of target column
 - `20231204v1_with_paper_info.csv`: same as `20231204v1.csv` with paper information except for 56/608 entries
-- `unidentified.txt`: List of 56 entries that can't be found in either papers 
+- `unidentified_with_refs.txt`: List of 56 entries with paper info that are not in either database sent by Homin
 - `laskowski_semi-fromatted.csv`: Data from the pdf SI of paper 2 above. Some of the pdf was not perfectly rendered in the csv
 - `LiIonDatabase.csv`: Data from paper 1 above, take directly from [here](http://pcwww.liv.ac.uk/~msd30/lmds/LiIonDatabase.html)
