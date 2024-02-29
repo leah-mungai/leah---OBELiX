@@ -74,7 +74,7 @@ if __name__ == "__main__":
         
     not_found.close()
                 
-    np.savetxt("20231204v1_with_paper_info.csv", new_homin_data, delimiter=",", fmt="%s", header=",".join(homin_header) + ", paper")
+    np.savetxt("20231204v1_with_paper_info.csv", new_homin_data, delimiter=",", fmt="%s", header=",".join(homin_header) + ",paper")
     
     print("Not found count: ", not_found_count)
     print("Total count: ", len(homin_data[:,0]))
