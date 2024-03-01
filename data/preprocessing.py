@@ -1,4 +1,5 @@
 import numpy as np
+from mendeleev.fetch import fetch_table
 import re
 import pandas as pd
 
@@ -75,7 +76,39 @@ def add_paper_info(database):
 
     new_homin_data = pd.DataFrame(new_homin_data, columns=database.columns.tolist() + ["paper"])
     
-    return new_homin_data    
+    return new_homin_data
+
+def parse_sample(data):
+    parsed_data = []
+    elem_df = fetch_table("elements")
+    all_elems = elem_df['symbol']
+    pat = re.compile("|".join(all_elems.tolist()))
+    for s, sample in data.iterrows():
+        comp = sample["True Composition"]
+        match = re.findall(pat, comp)
+        stoich = re.split(pat, comp)[1:]
+        dix = {}
+        dix["Space Group"] = sample["Space group number"]
+        dix["a"] = sample["a"]
+        dix["b"] = sample["b"]
+        dix["c"] = sample["c"]
+        dix["alpha"] = sample["alpha"]
+        dix["beta"] = sample["beta"]
+        dix["gamma"] = sample["gamma"]
+        for e in all_elems:
+            dix[e] = 0
+        for e, f in zip(match, stoich):
+            match = re.match(r"([a-z]+)([0-9]+)", f, re.I)
+            if match:
+                items = match.groups()
+                dix[e + items[0]] = float(items[1])
+            else:
+                dix[e] = float(f)
+
+        dix["IC"] = float(sample["Ionic conductivity (S cm-1)"])
+        parsed_data.append(dix)
+
+    return pd.DataFrame(parsed_data)    
 
 if __name__ == "__main__":
     
@@ -84,7 +117,15 @@ if __name__ == "__main__":
     homin_data = pd.read_csv(homin_database, dtype=str)
 
     new_homin_data = add_paper_info(homin_data)
-                
     new_homin_data.to_csv("20231204v1_with_paper_info.csv", index=False)
+    final = parse_sample(new_homin_data)
+    # thresh = 1e-8
+    # final.loc[final["IC"] < thresh, "IC"] = thresh
+    final["IC"] = np.log10(final["IC"])
+    # final.hist(column=["IC"])
+
+    fill_cols = (final != 0).any(axis=0)
+    temp = final.loc[:, fill_cols]
+    temp.to_csv("20231204v1_preproc.csv")
     
     
