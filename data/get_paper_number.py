@@ -1,5 +1,6 @@
 import numpy as np
 import re
+import pandas as pd
 
 def is_same_formula(formula_string1, formula_string2):
     f1 = re.findall("([A-Za-z]{1,2})([0-9\.]*)\s*", formula_string1)
@@ -44,15 +45,13 @@ def get_paper_from_unidentified(material, uni_data):
             return uni_data[j, 1]
     return None
 
-if __name__ == "__main__":
-    
-    homin_database = "20231204v1.csv"
+def add_paper_info(database):
+
     laskowski_database = "laskowski_semi-fromatted.csv"
     liion_database = "LiIonDatabase.csv"
     uni_datatbase = "unidentified_with_refs.csv"
-    
-    homin_header = open(homin_database, "r").readline().strip().split(",")
-    homin_data = np.genfromtxt(homin_database, delimiter=',', dtype=str, skip_header=1)
+
+    homin_data = database.to_numpy()
     laskowski_data = np.genfromtxt(laskowski_database, delimiter=',', dtype=str)
     liion_data = np.genfromtxt(liion_database, delimiter=',', dtype=str, skip_header=1)
     uni_data = np.genfromtxt(uni_datatbase, delimiter=',', dtype=str)
@@ -73,9 +72,19 @@ if __name__ == "__main__":
         new_homin_data[i,-1] = paper_info
         
     not_found.close()
-                
-    np.savetxt("20231204v1_with_paper_info.csv", new_homin_data, delimiter=",", fmt="%s", header=",".join(homin_header) + ",paper")
+
+    new_homin_data = pd.DataFrame(new_homin_data, columns=database.columns.tolist() + ["paper"])
     
-    print("Not found count: ", not_found_count)
-    print("Total count: ", len(homin_data[:,0]))
+    return new_homin_data    
+
+if __name__ == "__main__":
+    
+    homin_database = "20231204v1.csv"
+
+    homin_data = pd.read_csv(homin_database, dtype=str)
+
+    new_homin_data = add_paper_info(homin_data)
+                
+    new_homin_data.to_csv("20231204v1_with_paper_info.csv", index=False)
+    
     
