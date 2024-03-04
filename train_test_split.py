@@ -143,10 +143,15 @@ def main(args):
     n_data = len(df)
 
     # Check duplicates
-    df = df.drop_duplicates(keep="first")
-    n_duplicates = len(df) - n_data
+    dup_rows = df.duplicated(subset=("Z","True Composition","Space group number","a","b","c","alpha","beta","gamma"), keep="first")
+
+    duplicated_df = df[dup_rows]
+    df = df[~dup_rows]
+    
+    n_duplicates = n_data - len(df)
     if n_duplicates > 0:
         print(f"ATTENTION: The original data set contained {n_duplicates} duplicates!")
+        print(duplicated_df)
     n_data = len(df)
 
     # Get target variable
