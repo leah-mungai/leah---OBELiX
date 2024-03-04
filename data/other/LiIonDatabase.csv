@@ -1,8 +1,4 @@
-﻿Where a user wishes to use this Database for the purposes of any extraction or re-utilisation for commercial use, then such use may only be granted under licence by the University. To request such consent and the licence terms under which such consent is granted, please contact impactscience@liverpool.ac.uk and ipadmin@liverpool.ac.uk. Any use of the Database, whether for the purpose of illustration for teaching or academic research or under a commercial licence, should include an appropriate citation to acknowledge the source of the Database as the University of Liverpool. 
-
-This was first presented in the article, A Database of Experimentally Measured Lithium Solid Electrolyte Conductivities Evaluated with Machine Learning, Cameron J. Hargreaves, Michael W. Gaultois, Luke M. Daniels, Emma J. Watts, Vitaliy A. Kurlin, Michael Moran, Yun Dang, Rhun Morris, Alexandra Morscher, Kate Thompson, Matthew A. Wright, Beluvalli-Eshwarappa Prasad, Frédéric Blanc, Chris M. Collins, Catriona A. Crawford, Benjamin B. Duff, Jae Evans, Jacinthe Gamon, Guopeng Han, Bernhard T. Leube, Hongjun Niu, Arnaud J. Perez, Aris Robinson, Oliver Rogan, Paul M. Sharp, Elvis Shoko, Manel Sonni, William J. Thomas, Andrij Vasylenko, Lu Wang, Matthew J. Rosseinsky, Matthew S. Dyer, npj Computational Materials, 2022
-
-ID,composition,source,temperature,target,log_target,family,ChemicalFamily
+﻿ID,composition,source,temperature,target,log_target,family,ChemicalFamily
 1,Li2Ti0.75Ta0.25O3.125,10.1016/j.fusengdes.2010.04.003,300,9.00E-05,-4.045757491,Rocksalt,Oxides
 2,Li2OHBr,10.1002/aenm.201700971,22.06,5.40E-07,-6.26760624,Anti-Perovskite,Oxides and Other Anions
 3,Li2.4OH0.6Cl,10.1002/aenm.201700971,26,8.90E-08,-7.050609993,Anti-Perovskite,Oxides and Other Anions
@@ -781,10 +777,10 @@ ID,composition,source,temperature,target,log_target,family,ChemicalFamily
 918,LiTa2PO8,10.1039/C8TA09170F,85,1.58E-02,-1.801342913,Other,#N/A
 919,Li1.4S2.2P0.6,10.1016/j.ssi.2006.07.017,45,3.16E-03,-2.500312917,Glass-Ceramic,#N/A
 920,Li4.8Al0.8Si0.2S4,10.1006/jssc.2002.9701,253,3.98E-03,-2.400116928,Thio-LISICON,Oxides and Other Anions
-921,LiF,"Journal De Physique 26 339-341, 1965",392,7.75E-09,-8.110698297,Rocksalt,Oxides
+921,LiF,"Journal De Physique 26 339-341. 1965",392,7.75E-09,-8.110698297,Rocksalt,Oxides
 922,Li0.022 La0.118 Ti0.2 Al0.004 O0.631,10.1007/BF02378009,97.37,5.62E-03,-2.250031916,Perovskite,#N/A
-922,LiF,"Journal De Physique 26 339-341, 1965",351,2.65E-09,-8.576754126,Rocksalt,#N/A
-923,LiF,"Journal De Physique 26 339-341, 1965",321,1.07E-09,-8.970616222,Rocksalt,#N/A
+922,LiF,"Journal De Physique 26 339-341. 1965",351,2.65E-09,-8.576754126,Rocksalt,#N/A
+923,LiF,"Journal De Physique 26 339-341. 1965",321,1.07E-09,-8.970616222,Rocksalt,#N/A
 924,LiF,10.1023/A:1006564921011,270,1.85E-10,-9.733717436,Rocksalt,#N/A
 925,LiF,10.1023/A:1006564921011,203,1.41E-11,-10.85087436,Rocksalt,#N/A
 926,LiF,10.1023/A:1006564921011,142,5.70E-13,-12.24379656,Rocksalt,#N/A
@@ -822,4 +818,4 @@ ID,composition,source,temperature,target,log_target,family,ChemicalFamily
 2028,Li3.35Ge0.35P0.65S4,10.1149/1.1379028,25,0.001830655,-2.737393551,Thio-LISICON,Sulphides
 2029,Li6NiCl8,10.1002/zaac.19875531020,25,2.69E-10,-9.569675406,Rocksalt,Halides
 2030,Li6CoCl8,10.1002/zaac.19875531020,25,1.51E-06,-5.821821295,Rocksalt,Halides
-2031,LiF,"Journal De Physique 26 339-341, 1965",25,1.18E-14,-13.92960042,Rocksalt,Halides
+2031,LiF,"Journal De Physique 26 339-341. 1965",25,1.18E-14,-13.92960042,Rocksalt,Halides

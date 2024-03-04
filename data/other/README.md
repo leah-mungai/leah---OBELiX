@@ -11,6 +11,8 @@
 
 - Paper: [Forrest A. L. Laskowski et al., Energy Environ. Sci., 16, 1264 (2023)](https://pubs.rsc.org/en/content/articlelanding/2023/ee/d2ee03499a#!)
 - This is one of two source databases used by Homin et al. to construct _our_ initial data set.
+- `laskowski_semi-fromatted.csv`: Data extracted from the pdf SI. Some of the pdf was not perfectly rendered in the csv
+- `doi_lookup_table.csv`: lookup table between reference number in the SI and the doi. Extracted using `extract_doi.py`
 
 ## Shon and Min, ACS Omega, 2023
 

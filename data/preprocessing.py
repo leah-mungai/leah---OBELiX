@@ -13,25 +13,26 @@ def is_same_formula(formula_string1, formula_string2):
             return False
     return True
 
-def get_paper_from_laskowski(material, laskowski_data):
+def get_paper_from_laskowski(material, laskowski_data, doi_lookup_table):
+                        
     for j, paper_material in enumerate(laskowski_data[:,0]):
         if (material == paper_material or
             is_same_formula(material, paper_material) or
             paper_material + laskowski_data[min(j+1, laskowski_data.shape[0]-1),0] == material or
             paper_material + laskowski_data[min(j+2, laskowski_data.shape[0]-1),0] == material):
-            paper_number = laskowski_data[j,-1]
-            if paper_number == "":
+            paper_doi = laskowski_data[j,-1]
+            if paper_doi == "":
                 if paper_material + laskowski_data[min(j+1, laskowski_data.shape[0]-1),0] == material and laskowski_data[j+1,-1] != "":
-                    paper_number = laskowski_data[j+1,-1]
+                    paper_doi = laskowski_data[j+1,-1]
                 elif paper_material + laskowski_data[min(j+2, laskowski_data.shape[0]-1),0] == material and (laskowski_data[j+1,-1] != "" or laskowski_data[j+2,-1] != ""):
                     if laskowski_data[j+1,-1] == "":
-                        paper_number = laskowski_data[j+2,-1]
+                        paper_doi = laskowski_data[j+2,-1]
                     else:
-                        paper_number = laskowski_data[j+1,-1]
+                        paper_doi = laskowski_data[j+1,-1]
                 else:
                     print(material, "Missing paper number")
-                    paper_number = "MP"
-            return "L-" + paper_number
+                    paper_doi = "MP"       
+            return ";".join([doi_lookup_table[doi] for doi in re.findall("[0-9]+", paper_doi)])
     return None
 
 def get_paper_from_liion(material, liion_data):
@@ -48,12 +49,14 @@ def get_paper_from_unidentified(material, uni_data):
 
 def add_paper_info(database):
 
-    laskowski_database = "laskowski_semi-fromatted.csv"
-    liion_database = "LiIonDatabase.csv"
+    laskowski_database = "other/laskowski_semi-fromatted.csv"
+    liion_database = "other/LiIonDatabase.csv"
     uni_datatbase = "unidentified_with_refs.csv"
+    doi_lookup_table_file = "other/doi_lookup_table.csv"
 
     homin_data = database.to_numpy()
     laskowski_data = np.genfromtxt(laskowski_database, delimiter=',', dtype=str)
+    doi_lookup_table = dict(np.genfromtxt(doi_lookup_table_file, delimiter=',', dtype=str, skip_header=1))
     liion_data = np.genfromtxt(liion_database, delimiter=',', dtype=str, skip_header=1)
     uni_data = np.genfromtxt(uni_datatbase, delimiter=',', dtype=str)
     
@@ -63,7 +66,7 @@ def add_paper_info(database):
     not_found = open("unidentified.txt", "w")
     
     for i, material in enumerate(homin_data[:,0]):
-        paper_info = get_paper_from_laskowski(material, laskowski_data)
+        paper_info = get_paper_from_laskowski(material, laskowski_data, doi_lookup_table)
         if paper_info is None:
             paper_info = get_paper_from_liion(material, liion_data)
             if paper_info is None:
