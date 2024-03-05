@@ -2,6 +2,16 @@ import numpy as np
 from mendeleev.fetch import fetch_table
 import re
 import pandas as pd
+import argparse
+
+def read_options():
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-t","--thresh",dest="thresh",type=float, default=None, help="Threshold for ionic conductivity. Default is None.")
+
+    args = parser.parse_args()
+
+    return args
 
 def is_same_formula(formula_string1, formula_string2):
     f1 = re.findall("([A-Za-z]{1,2})([0-9\.]*)\s*", formula_string1)
@@ -73,31 +83,46 @@ def add_paper_info(database):
                 paper_info = get_paper_from_unidentified(material, uni_data)
                 if paper_info is None:
                     not_found_count += 1
+                    print(i, material, file=not_found)
+                    paper_info = "MP"
         new_homin_data[i,-1] = paper_info
         
     not_found.close()
 
+    if not_found_count > 0:
+        print("WARNING: %d materials were not found in the databases"%(not_found_count))
+    
     new_homin_data = pd.DataFrame(new_homin_data, columns=database.columns.tolist() + ["paper"])
     
     return new_homin_data
 
 
-if __name__ == "__main__":
+def main(args):
     
-    homin_database = "20231204v1.csv"
-
-    homin_data = pd.read_csv(homin_database, dtype=str)
+    homin_database = "raw.xlsx"
+    homin_data = pd.read_excel(homin_database)
 
     new_homin_data = add_paper_info(homin_data)
-    
-    # thresh = 1e-8
-    # final.loc[final["IC"] < thresh, "IC"] = thresh
+
+    # Rename and reorgnize to columns
     final = new_homin_data.drop(["Reduced Composition", "Z"], axis=1)
     final.rename({"True Composition": "Composition"}, axis=1, inplace=True)
     cols = list(final.columns)
     cols = [cols[0]] + cols[2:-1] + [cols[1]] + [cols[-1]]
     final = final[cols]
 
-    final.to_csv("20231204v1_preproc.csv")
+    #final.loc[final["Ionic conductivity (S cm-1)"] == '<1E-10', "Ionic conductivity (S cm-1)"] = 1e-15
+
+    for i,cond in enumerate(final["Ionic conductivity (S cm-1)"]):
+        if cond == '<1E-10' or cond == '<1E-8':
+            final.loc[i, "Ionic conductivity (S cm-1)"] = 1e-15
+        elif type(cond) != float:
+            print("WARNING: IC %d is not a float:"%(i), cond)
+            
+    if args.thresh is not None:
+        final.loc[final["Ionic conductivity (S cm-1)"] < args.thresh, "Ionic conductivity (S cm-1)"] = args.thresh
     
+    final.to_csv("processed.csv", float_format='%g')
     
+if __name__ == "__main__":
+    main(read_options())

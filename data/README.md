@@ -9,13 +9,9 @@ See `other/` for more details about these sources
 
 ## Files
 
-- `20231204.xlsx`: Original Excel file provided by Homin
-- `20231204v1.csv`: Post-processing by Alex
-    - 2023.12.06: Replace "E-" by "e-"
-    - 2023.12.06: Set all "<1e-10" to 1e-15
-    - 2024.02.27: Corrected bad compositions spotted by Homin
-- `unidentified_with_refs.txt`: List of 56 entries with paper info that are not in either database, sent by Homin
-- 20231204v1_preproc.csv: preprocessed file with paper info, output of `preprocessing.py`
+- `raw.xlsx`: Original Excel file provided by Homin, with corrections by Homin
+- `unidentified_with_refs.csv`: List of 56 entries with paper info that are not in either database, sent by Homin
+- `processed.csv`: processed file with paper info, output of `preprocessing.py`
 
 ## Scripts
 - preprocessing.py: Adds paper information, process data to be compatible with DAVE
