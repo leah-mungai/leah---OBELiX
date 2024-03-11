@@ -146,7 +146,7 @@ def add_paper_info(database):
                     float_match_cond = 1e-15
                 
                 if abs(float_match_cond - float_cond) <= abs(float_best_match_cond - float_cond):
-                    paper_info.extend(["*" + d for d in doi])
+                    paper_info = ["*" + d for d in doi]
                     float_best_match_cond = float_match_cond
                     best_match_cond = match_cond
                     
@@ -157,12 +157,12 @@ def add_paper_info(database):
                 paper_info = ["Not in databases"]
             else:
                 not_found_exactly_count += 1
-                print(i, material,":",file=close_matches)
-                print(cond,"-->", best_match_cond, "(", float_best_match_cond - float_cond, ")", file=close_matches)
-                print("Closest match:", " ".join(["https://doi.org/" + p.replace("*", "") for p in paper_info]), file=close_matches)
+                print(not_found_exactly_count, i, material,file=close_matches, sep=",")
+                print(cond, best_match_cond, float_best_match_cond - float_cond, file=close_matches, sep=",")
+                print("Closest match:", ",".join(["=HYPERLINK(\"https://doi.org/" + p.replace("*", "") + "\")" for p in paper_info]), file=close_matches, sep=",")
                 print("Potential matches:", file=close_matches)
                 for doi, match_cond in potential_matches:
-                    print(match_cond, " ".join(["https://doi.org/" + p for p in doi]), file=close_matches)
+                    print(match_cond, ",".join(["=HYPERLINK(\"https://doi.org/" + p + "\")" for p in doi]), file=close_matches, sep=",")
                 print(file=close_matches)
                 print(file=close_matches)
 
