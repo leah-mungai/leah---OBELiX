@@ -76,8 +76,10 @@ def get_paper_from_laskowski(material, cond, laskowski_data, doi_lookup_table):
                     
                 paper_dois.extend([doi_lookup_table[doi] for doi in re.findall("[0-9]+", paper_doi)])
             else:
-                potential_matches.append(([doi_lookup_table[doi] for doi in re.findall("[0-9]+", paper_doi)], cond_mat))
-        
+                if paper_doi == "Missing paper info (Laskowski)":
+                    potential_matches.append(([paper_doi], cond_mat))
+                else:
+                    potential_matches.append(([doi_lookup_table[doi] for doi in re.findall("[0-9]+", paper_doi)], cond_mat))
     return paper_dois, potential_matches
 
 def get_paper_from_liion(material, cond, liion_data):
@@ -99,18 +101,41 @@ def get_paper_from_unidentified(material, uni_data):
             paper_dois.append(uni_data[j, 1])
     return paper_dois
 
+def get_paper_from_hand(material, cond, hand_data):
+    paper_dois = []
+
+    try:
+        float_cond = float(cond)
+    except ValueError:
+        float_cond = 1e-15
+    
+    for j, data in enumerate(hand_data[:,[0,1]]):
+        hand_material = data[0]
+        hand_cond = data[1]
+
+        try:
+            float_hand_cond = float(hand_cond)
+        except ValueError:
+            float_hand_cond = 1e-15
+        
+        if (material == hand_material or is_same_formula(material, hand_material)) and float_cond == float_hand_cond:
+            paper_dois.append(hand_data[j, 2])
+    return paper_dois
+
 def add_paper_info(database):
 
     laskowski_database = "other/laskowski_semi-fromatted.csv"
     liion_database = "other/LiIonDatabase.csv"
     uni_datatbase = "unidentified_with_refs.csv"
     doi_lookup_table_file = "other/doi_lookup_table.csv"
+    hand_database = "checked_by_hand.csv"
 
     homin_data = database.to_numpy()
     laskowski_data = np.genfromtxt(laskowski_database, delimiter=',', dtype=str)
     doi_lookup_table = dict(np.genfromtxt(doi_lookup_table_file, delimiter=',', dtype=str, skip_header=1))
     liion_data = np.genfromtxt(liion_database, delimiter=',', dtype=str, skip_header=1)
     uni_data = np.genfromtxt(uni_datatbase, delimiter=',', dtype=str)
+    hand_data = np.genfromtxt(hand_database, delimiter=',', dtype=str, skip_header=1)
     
     new_homin_data = np.concatenate((homin_data,np.ones((homin_data.shape[0],1))), axis=1)
     
@@ -122,7 +147,13 @@ def add_paper_info(database):
     for i, mat_info in enumerate(homin_data[:,[0,3]]):
         material = mat_info[0]
         cond = mat_info[1]
-            
+
+        paper_info = get_paper_from_hand(material, cond, hand_data)
+
+        if len(paper_info) > 0:
+            new_homin_data[i,-1] = "|".join(paper_info)
+            continue
+        
         paper_info_laskowski, potential_matches_laskowski = get_paper_from_laskowski(material, cond, laskowski_data, doi_lookup_table)    
         paper_info_LiIon, potential_matches_LiIon = get_paper_from_liion(material, cond, liion_data)
         paper_info_unidentified = get_paper_from_unidentified(material, uni_data)
@@ -153,10 +184,12 @@ def add_paper_info(database):
             if len(paper_info) == 0:
                 not_found_count += 1
                 print("No match for:", material, cond)
+                print("Matches:", potential_matches)
                 print(i, material, file=not_found)
                 paper_info = ["Not in databases"]
             else:
                 not_found_exactly_count += 1
+                # print(i, material, cond, file=close_matches, sep=",")
                 print(not_found_exactly_count, i, material,file=close_matches, sep=",")
                 print(cond, best_match_cond, float_best_match_cond - float_cond, file=close_matches, sep=",")
                 print("Closest match:", ",".join(["=HYPERLINK(\"https://doi.org/" + p.replace("*", "") + "\")" for p in paper_info]), file=close_matches, sep=",")
@@ -204,6 +237,7 @@ def remove_exact_duplicates(df):
 def main(args):
     
     homin_database = "raw.xlsx"
+        
     homin_data = pd.read_excel(homin_database)
 
     homin_data = remove_exact_duplicates(homin_data)
@@ -211,8 +245,9 @@ def main(args):
     homin_data = add_paper_info(homin_data)
 
     # Rename and reorgnize to columns
-    final = homin_data.drop(["Reduced Composition", "Z"], axis=1)
+    final = homin_data.drop(["Reduced Composition", "Z", "Family", "Space group", "IC (Bulk)", "IC (Total)"], axis=1)
     final.rename({"True Composition": "Composition"}, axis=1, inplace=True)
+    final.rename({"Space group #": "Space group number"}, axis=1, inplace=True)
     cols = list(final.columns)
     cols = [cols[0]] + cols[2:-1] + [cols[1]] + [cols[-1]]
     final = final[cols]
@@ -225,7 +260,7 @@ def main(args):
             
     if args.thresh is not None:
         final.loc[final["Ionic conductivity (S cm-1)"] < args.thresh, "Ionic conductivity (S cm-1)"] = args.thresh
-    
+        
     final.to_csv("processed.csv", float_format='%g')
     
 if __name__ == "__main__":

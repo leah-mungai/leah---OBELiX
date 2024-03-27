@@ -11,6 +11,7 @@ See `other/` for more details about these sources
 
 - `raw.xlsx`: Original Excel file provided by Homin, with corrections by Homin
 - `unidentified_with_refs.csv`: List of 56 entries with paper info that are not in either database, sent by Homin
+- `checked_by_hand.csv`: A list of 94 entries for which the doi was confirmed manually
 - `processed.csv`: processed file with paper info, output of `preprocessing.py`
 
 ## Scripts
