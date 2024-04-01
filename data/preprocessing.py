@@ -157,7 +157,7 @@ def add_paper_info(database):
         paper_info_laskowski, potential_matches_laskowski = get_paper_from_laskowski(material, cond, laskowski_data, doi_lookup_table)    
         paper_info_LiIon, potential_matches_LiIon = get_paper_from_liion(material, cond, liion_data)
         paper_info_unidentified = get_paper_from_unidentified(material, uni_data)
-
+        
         paper_info = paper_info_laskowski + paper_info_LiIon + paper_info_unidentified
         potential_matches = potential_matches_laskowski + potential_matches_LiIon
 
@@ -214,7 +214,7 @@ def add_paper_info(database):
     if not_found_count > 0:
         print("WARNING: %d materials were not found in the databases"%(not_found_count))
     
-    new_homin_data = pd.DataFrame(new_homin_data, columns=database.columns.tolist() + ["paper"])
+    new_homin_data = pd.DataFrame(new_homin_data, columns=database.columns.tolist() + ["DOI"])
     
     return new_homin_data
 
@@ -242,8 +242,10 @@ def main(args):
 
     homin_data = remove_exact_duplicates(homin_data)
 
-    homin_data = add_paper_info(homin_data)
-
+    if "DOI" not in homin_data.columns:
+        homin_data = add_paper_info(homin_data)
+        homin_data.to_excel("raw.xlsx", index=False)
+        
     # Rename and reorgnize to columns
     final = homin_data.drop(["Reduced Composition", "Z", "Family", "Space group", "IC (Bulk)", "IC (Total)"], axis=1)
     final.rename({"True Composition": "Composition"}, axis=1, inplace=True)
