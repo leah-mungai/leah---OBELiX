@@ -247,7 +247,7 @@ def main(args):
         homin_data.to_excel("raw.xlsx", index=False)
         
     # Rename and reorgnize to columns
-    final = homin_data.drop(["Reduced Composition", "Z", "Family", "Space group", "IC (Bulk)", "IC (Total)"], axis=1)
+    final = homin_data.drop(["Reduced Composition", "Z", "Family", "Space group", "IC (Bulk)", "IC (Total)","Checked"], axis=1)
     final.rename({"True Composition": "Composition"}, axis=1, inplace=True)
     final.rename({"Space group #": "Space group number"}, axis=1, inplace=True)
     cols = list(final.columns)
