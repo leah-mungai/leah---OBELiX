@@ -9,10 +9,10 @@ See `other/` for more details about these sources
 
 ## Files
 
-- `raw.xlsx`: Original Excel file provided by Homin, with corrections by Homin
-- `unidentified_with_refs.csv`: List of 56 entries with paper info that are not in either database, sent by Homin
-- `checked_by_hand.csv`: A list of 94 entries for which the doi was confirmed manually
+- `raw.xlsx`: Raw dataset with DOIs
 - `processed.csv`: processed file with paper info, output of `preprocessing.py`
+- `unidentified_with_refs.csv`: List of 56 entries with paper info that are not in either database, sent by Homin (for automatic DOIs only)
+- `checked_by_hand.csv`: A list of 94 entries for which the doi was confirmed manually (for automatic DOIs only)
 
 ## Scripts
 - preprocessing.py: Adds paper information, process data to be compatible with DAVE
