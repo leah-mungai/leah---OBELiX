@@ -1,6 +1,6 @@
 """
 Splits the data set intro train and test by keeping approximately the same distribution
-of the target variable (IC) in both splits, as well disjoint papers in each split.
+of the target variable (IC) in both splits, as well disjoint papers and compositions(+spg) in each split.
 
 Example:
 
@@ -84,17 +84,22 @@ def add_args(parser):
         help="If True, take the log of the target variable before stratifying.",
     )
     parser.add_argument(
-        "--paper_col",
-        default=None,
-        type=str,
-        help="Name of the column containing the paper ID information. If None, paper "
-        "information is not taken into account for the split.",
+        "--plain_stratify",
+        default=False,
+        action="store_true",
+        help="If True, do a stratified split of the target variable wihout using paper, composition or spacegroup info.",
     )
     parser.add_argument(
         "--n_bins_stratify",
         default=10,
         type=int,
         help="Number of bins for the stratification of the target variable.",
+    )
+    parser.add_argument(
+        "--composition_only",
+        default=False,
+        action="store_true",
+        help="Use composition only instead of composition and spacegroup number.",
     )
     parser.add_argument(
         "--max_iters",
@@ -134,6 +139,36 @@ def stratified_split(y, n_bins, seed):
     )
     return indices_tr, indices_tt
 
+def get_directly_conected_entries(df, i, properties):
+
+    # Entries with the same paper (there can be more than one)
+    connected = []
+    for paper in df["DOI"].iloc[i].split("|"):
+        connected += list(df.loc[df["DOI"].str.contains(paper)].index)
+
+    # OR
+        
+    # Entries with the same composition (AND space group number)    
+    connected += df.loc[df[properties] == df[properties].iloc[i]].index
+
+    return set(connected)
+    
+def get_all_connected_entries(df, idx, i, properties):
+    for j in get_directly_conected_entries(df, i, properties):
+        if j not in idx:
+            idx.append(j)
+            idx = get_all_connected_entries(df,idx,j, properties)
+    return idx
+
+def get_groups(df, properties):
+    idx = []
+    allidx = set()
+    while allidx != set(range(len(df))):
+        rest = set(range(len(df))) - allidx
+        el = rest.pop()
+        idx.append(get_all_connected_entries(df,[el],el,properties))
+        allidx = set().union(*idx)
+    return idx
 
 def main(args):
     random.seed(args.seed)
@@ -143,7 +178,7 @@ def main(args):
     n_data = len(df)
 
     # Check duplicates
-    dup_rows = df.duplicated(subset=("Z","True Composition","Space group number","a","b","c","alpha","beta","gamma"), keep="first")
+    dup_rows = df.duplicated(keep="first")
 
     duplicated_df = df[dup_rows]
     df = df[~dup_rows]
@@ -159,8 +194,8 @@ def main(args):
         df[args.target] = np.log(df[args.target])
     y = df[args.target]
 
-    # If paper_col is None, do a plain stratified split by the target variable
-    if args.paper_col is None:
+    # If plain_startify, do a plain stratified split by the target variable
+    if args.plain_stratify:
         indices_tr, indices_tt = stratified_split(
             y, n_bins=args.n_bins_stratify, seed=args.seed
         )
@@ -179,9 +214,15 @@ def main(args):
     # Otherwise, try brute force splits until the desired stratification is achieved
     success = False
     min_emd = np.inf
-    seed = args.seed
-    papers = df[args.paper_col]
-    papers_unique = papers.unique()
+    seed = args.seed        
+    
+    if args.composition_only:
+        groups = get_groups(df, ["Composition"])
+    else:
+        groups = get_groups(df, ["Composition", "Space group number"])
+
+    # WIP: Use groups instead of papers    
+        
     n_papers = len(papers_unique)
     n_papers_tt = int(n_papers * args.pct_test)
     for it in tqdm(range(args.max_iters)):
