@@ -25,6 +25,10 @@ from scipy.stats import wasserstein_distance
 from sklearn.model_selection import train_test_split
 from tqdm import tqdm
 
+pd.set_option('display.max_rows', 500)
+pd.set_option('display.max_columns', 10)
+pd.set_option('display.width', 1000)
+
 
 def add_args(parser):
     """
@@ -115,7 +119,7 @@ def add_args(parser):
     )
     parser.add_argument(
         "--seed",
-        default=None,
+        default=0,
         type=int,
         help="Random seed for the train/test split",
     )
@@ -144,12 +148,12 @@ def get_directly_conected_entries(df, i, properties):
     # Entries with the same paper (there can be more than one)
     connected = []
     for paper in df["DOI"].iloc[i].split("|"):
-        connected += list(df.loc[df["DOI"].str.contains(paper)].index)
-
+        connected += list(df.loc[df["DOI"].str.contains(paper, regex=False)].index)
+            
     # OR
         
     # Entries with the same composition (AND space group number)    
-    connected += df.loc[df[properties] == df[properties].iloc[i]].index
+    connected += list(df.loc[(df[properties] == df[properties].iloc[i]).all(1)].index)
 
     return set(connected)
     
@@ -221,23 +225,25 @@ def main(args):
     else:
         groups = get_groups(df, ["Composition", "Space group number"])
 
-    # WIP: Use groups instead of papers    
-        
-    n_papers = len(papers_unique)
-    n_papers_tt = int(n_papers * args.pct_test)
+    #print(df[["Composition", "Space group number", "DOI"]].iloc[groups[0]])
+    print("Number of groups:", len(groups))
+    print("Number of entries per group:", [len(g) for g in groups])
+
+    n_groups = len(groups)
+    n_groups_tt = int(n_groups * args.pct_test)
     for it in tqdm(range(args.max_iters)):
         rng = np.random.default_rng(seed=seed)
-        papers_shuffled = rng.permutation(papers_unique)
-        papers_tt = papers_shuffled[:n_papers_tt]
-        df_tt_tmp = df.loc[df[args.paper_col].isin(papers_tt)]
+        groups_shuffled = [groups[i] for i in rng.permutation(len(groups))]
+        groups_tt = groups_shuffled[:n_groups_tt]
+        df_tt_tmp = df.iloc[[i for g in groups_tt for i in g]]
         pct_test = len(df_tt_tmp) / n_data
         # If the number of data points is outside the requested range, try again
         if pct_test < args.min_pct_test or pct_test > args.max_pct_test:
             seed += 1
             continue
         # Check distribution of target variable
-        papers_tr = papers_shuffled[n_papers_tt:]
-        df_tr_tmp = df.loc[df[args.paper_col].isin(papers_tr)]
+        groups_tr = groups_shuffled[n_groups_tt:]
+        df_tr_tmp = df.iloc[[i for g in groups_tr for i in g]]
         y_tr = df_tr_tmp[args.target]
         y_tt = df_tt_tmp[args.target]
         emd = wasserstein_distance(y_tr, y_tt)
@@ -262,7 +268,8 @@ def main(args):
             f"EMD found: {min_emd}"
         )
     print(f"Number of training data points: {len(df_tr)}")
-    print(f"Number of training data points: {len(df_tt)}")
+    print(f"Number of testing  data points: {len(df_tt)}")
+    print(f"Test percentage: {len(df_tt)/(len(df_tt) + len(df_tr))}")
 
     # Sanity checks
     # The sum of the lengths of train and test is equal to the original length
@@ -276,19 +283,30 @@ def main(args):
     df_concat = pd.concat([df_tr, df_tt]).drop_duplicates(keep=False)
     if not len(df_concat) == len(df):
         print("ATTENTION: The train and the test set contain full duplicates!")
+
     # The sets of papers are disjoint
-    papers_tr = set(df_tr[args.paper_col].unique())
-    papers_tt = set(df_tt[args.paper_col].unique())
+    papers_tr = set(df_tr["DOI"].unique())
+    papers_tt = set(df_tt["DOI"].unique())
     papers_duplicated = papers_tr.intersection(papers_tt)
     if not len(papers_duplicated) == 0:
         print("ATTENTION: The train and the test set contain duplicate papers!")
         print(papers_duplicated)
+
     # The sets compositions are disjoint
-    compositions_tr = set(df_tr["True Composition"].unique())
-    compositions_tt = set(df_tt["True Composition"].unique())
+    compositions_tr = set(df_tr["Composition"].unique())
+    compositions_tt = set(df_tt["Composition"].unique())
     compositions_duplicated = compositions_tr.intersection(compositions_tt)
     if not len(compositions_duplicated) == 0:
         print("ATTENTION: The train and the test set contain duplicate compositions!")
+        print(compositions_duplicated)
+
+
+    # The sets compositions+spg are disjoint
+    spg_compositions_tr = df_tr[["Composition", "Space group number"]].drop_duplicates()
+    spg_compositions_tt = df_tt[["Composition", "Space group number"]].drop_duplicates()
+    compositions_duplicated = pd.merge(spg_compositions_tr,spg_compositions_tt, how='inner')
+    if not len(compositions_duplicated) == 0:
+        print("ATTENTION: The train and the test set contain duplicate compositions+spg!")
         print(compositions_duplicated)
 
     if args.do_plot:
