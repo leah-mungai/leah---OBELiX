@@ -175,7 +175,6 @@ def get_groups(df, properties):
     return idx
 
 def main(args):
-    random.seed(args.seed)
 
     # Read input CSV
     df = pd.read_csv(args.input, index_col=False)
@@ -231,15 +230,14 @@ def main(args):
 
     n_groups = len(groups)
     n_groups_tt = int(n_groups * args.pct_test)
+    rng = np.random.default_rng(seed=seed)
     for it in tqdm(range(args.max_iters)):
-        rng = np.random.default_rng(seed=seed)
         groups_shuffled = [groups[i] for i in rng.permutation(len(groups))]
         groups_tt = groups_shuffled[:n_groups_tt]
         df_tt_tmp = df.iloc[[i for g in groups_tt for i in g]]
         pct_test = len(df_tt_tmp) / n_data
         # If the number of data points is outside the requested range, try again
         if pct_test < args.min_pct_test or pct_test > args.max_pct_test:
-            seed += 1
             continue
         # Check distribution of target variable
         groups_tr = groups_shuffled[n_groups_tt:]
@@ -254,7 +252,6 @@ def main(args):
         # If the EMD between the train and test distribution of the target value is
         # larger than the requested minimum, try again
         if emd > args.max_emd:
-            seed += 1
             continue
         else:
             success = True
