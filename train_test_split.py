@@ -143,22 +143,22 @@ def stratified_split(y, n_bins, seed):
     )
     return indices_tr, indices_tt
 
-def get_directly_conected_entries(df, i, properties):
+def get_directly_connected_entries(df, i, properties):
 
     # Entries with the same paper (there can be more than one)
     connected = []
-    for paper in df["DOI"].iloc[i].split("|"):
+    for paper in df["DOI"].loc[i].split("|"):
         connected += list(df.loc[df["DOI"].str.contains(paper, regex=False)].index)
             
     # OR
         
     # Entries with the same composition (AND space group number)    
-    connected += list(df.loc[(df[properties] == df[properties].iloc[i]).all(1)].index)
+    connected += list(df.loc[(df[properties] == df[properties].loc[i]).all(1)].index)
 
     return set(connected)
     
 def get_all_connected_entries(df, idx, i, properties):
-    for j in get_directly_conected_entries(df, i, properties):
+    for j in get_directly_connected_entries(df, i, properties):
         if j not in idx:
             idx.append(j)
             idx = get_all_connected_entries(df,idx,j, properties)
@@ -224,7 +224,7 @@ def main(args):
     else:
         groups = get_groups(df, ["Composition", "Space group number"])
 
-    #print(df[["Composition", "Space group number", "DOI"]].iloc[groups[0]])
+    #print(df[["Composition", "Space group number", "DOI"]].loc[groups[0]])
     print("Number of groups:", len(groups))
     print("Number of entries per group:", [len(g) for g in groups])
 
@@ -234,14 +234,14 @@ def main(args):
     for it in tqdm(range(args.max_iters)):
         groups_shuffled = [groups[i] for i in rng.permutation(len(groups))]
         groups_tt = groups_shuffled[:n_groups_tt]
-        df_tt_tmp = df.iloc[[i for g in groups_tt for i in g]]
+        df_tt_tmp = df.loc[[i for g in groups_tt for i in g]]
         pct_test = len(df_tt_tmp) / n_data
         # If the number of data points is outside the requested range, try again
         if pct_test < args.min_pct_test or pct_test > args.max_pct_test:
             continue
         # Check distribution of target variable
         groups_tr = groups_shuffled[n_groups_tt:]
-        df_tr_tmp = df.iloc[[i for g in groups_tr for i in g]]
+        df_tr_tmp = df.loc[[i for g in groups_tr for i in g]]
         y_tr = df_tr_tmp[args.target]
         y_tt = df_tt_tmp[args.target]
         emd = wasserstein_distance(y_tr, y_tt)
