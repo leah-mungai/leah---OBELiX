@@ -18,3 +18,5 @@ See `other/` for more details about these sources
 - preprocessing.py: Adds paper information, process data to be compatible with DAVE
 - compare_xlsx.py: Script to compare to excel files since the raw dataset is an excel file. Usage: `python compare_xlsx.py OLD_FILE NEW_FILE`
 - datavis.ipynb: Visualize the raw data
+- get_mp_entries.py: script to automatically download similar cifs files from the MP
+- get_icsd_entries.py: script to automatically download similar cifs files from the ICSD
