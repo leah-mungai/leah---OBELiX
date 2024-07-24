@@ -218,27 +218,61 @@ def add_paper_info(database):
     
     return new_homin_data
 
-def remove_exact_duplicates(df):
-    # Check duplicates
+def remove_close_duplicates(df):
+
+    def is_close(val):
+        return (abs(final[cols] - val[cols]) < 0.1).all(axis=1)
+        
     n_data = len(df)
-    dup_rows = df.duplicated(keep="first")
+    dup_rows = df[list_columns].duplicated(keep="first")
     duplicated_df = df[dup_rows]
     df = df[~dup_rows]
 
     n_duplicates = n_data - len(df)
     if n_duplicates > 0:
-        print(f"WARNING: The original data set contained {n_duplicates} exact duplicates!")
+        print(f"WARNING: The data set contained {n_duplicates} exact duplicates!")
         print(duplicated_df)
     n_data = len(df)
 
     return df
     
-    
+def remove_exact_duplicates(df, list_columns=None, index=False):
+    # Check duplicates
+    n_data = len(df)
+    if index:
+        dup_rows = df.index.duplicated(keep="first")
+    else:
+        if list_columns is not None:
+            dup_rows = df[list_columns].duplicated(keep="first")
+        else:
+            dup_rows = df.duplicated(keep="first")
+    duplicated_df = df[dup_rows]
+    df = df[~dup_rows]
+
+    n_duplicates = n_data - len(df)
+    if n_duplicates > 0:
+        print(f"WARNING: The data set contained {n_duplicates} exact duplicates!")
+        print(duplicated_df)
+    n_data = len(df)
+
+    return df
+
+def replace_text_IC(cond):
+    if cond == '<1E-10' or cond == '<1E-8':
+        return 1e-15
+    elif type(cond) != float:
+        print("WARNING: IC %d is not a float:"%(i), cond)
+    return cond
+
+
+import pdb
 def main(args):
     
     homin_database = "raw.xlsx"
         
     homin_data = pd.read_excel(homin_database)
+
+    homin_data = homin_data.set_index("ID")
 
     homin_data = remove_exact_duplicates(homin_data)
 
@@ -247,21 +281,25 @@ def main(args):
         homin_data.to_excel("raw.xlsx", index=False)
         
     # Rename and reorgnize to columns
-    final = homin_data.drop(["Reduced Composition", "Z", "Family", "Space group", "IC (Bulk)", "IC (Total)","Checked"], axis=1)
+    final = homin_data[["True Composition", "Space group #","a", "b", "c", "alpha", "beta", "gamma", "Ionic conductivity (S cm-1)", "DOI"]].copy()
     final.rename({"True Composition": "Composition"}, axis=1, inplace=True)
     final.rename({"Space group #": "Space group number"}, axis=1, inplace=True)
-    cols = list(final.columns)
-    cols = [cols[0]] + cols[2:-1] + [cols[1]] + [cols[-1]]
-    final = final[cols]
 
-    for i,cond in enumerate(final["Ionic conductivity (S cm-1)"]):
-        if cond == '<1E-10' or cond == '<1E-8':
-            final.loc[i, "Ionic conductivity (S cm-1)"] = 1e-15
-        elif type(cond) != float:
-            print("WARNING: IC %d is not a float:"%(i), cond)
-            
+    final["Ionic conductivity (S cm-1)"] = final["Ionic conductivity (S cm-1)"].apply(replace_text_IC, axis=1)
+        
     if args.thresh is not None:
         final.loc[final["Ionic conductivity (S cm-1)"] < args.thresh, "Ionic conductivity (S cm-1)"] = args.thresh
+
+    print("Checking inputs...")
+    final = remove_exact_duplicates(final, ["Composition", "Space group number","a", "b", "c", "alpha", "beta", "gamma"])
+
+    print("Checking indices...")
+    final_index = remove_exact_duplicates(final, index=True)
+
+    pdb.set_trace()
+    
+    if len(final) != len(final_index):
+        print("WARNING: The data set contained duplicated indices!")
         
     final.to_csv("processed.csv", float_format='%g')
     
