@@ -218,19 +218,22 @@ def add_paper_info(database):
     
     return new_homin_data
 
-def remove_close_duplicates(df):
+def remove_close_duplicates(df, tol=1e-4):
 
+    cols = ["a", "b", "c", "alpha", "beta", "gamma"]
+    
     def is_close(val):
-        return (abs(final[cols] - val[cols]) < 0.1).all(axis=1)
+        matches = df.index[(df["Composition"] == val["Composition"]) & (abs(df[cols] - val[cols])/val[cols] < tol).all(axis=1)]
+        return matches.sort_values()[0] != val.name
         
     n_data = len(df)
-    dup_rows = df[list_columns].duplicated(keep="first")
+    dup_rows = df.apply(is_close, axis=1)
     duplicated_df = df[dup_rows]
     df = df[~dup_rows]
 
     n_duplicates = n_data - len(df)
     if n_duplicates > 0:
-        print(f"WARNING: The data set contained {n_duplicates} exact duplicates!")
+        print(f"WARNING: The data set contained {n_duplicates} close duplicates!")
         print(duplicated_df)
     n_data = len(df)
 
@@ -265,7 +268,6 @@ def replace_text_IC(cond):
     return cond
 
 
-import pdb
 def main(args):
     
     homin_database = "raw.xlsx"
@@ -284,8 +286,8 @@ def main(args):
     final = homin_data[["True Composition", "Space group #","a", "b", "c", "alpha", "beta", "gamma", "Ionic conductivity (S cm-1)", "DOI"]].copy()
     final.rename({"True Composition": "Composition"}, axis=1, inplace=True)
     final.rename({"Space group #": "Space group number"}, axis=1, inplace=True)
-
-    final["Ionic conductivity (S cm-1)"] = final["Ionic conductivity (S cm-1)"].apply(replace_text_IC, axis=1)
+    
+    final["Ionic conductivity (S cm-1)"] = final["Ionic conductivity (S cm-1)"].apply(replace_text_IC)
         
     if args.thresh is not None:
         final.loc[final["Ionic conductivity (S cm-1)"] < args.thresh, "Ionic conductivity (S cm-1)"] = args.thresh
@@ -293,10 +295,13 @@ def main(args):
     print("Checking inputs...")
     final = remove_exact_duplicates(final, ["Composition", "Space group number","a", "b", "c", "alpha", "beta", "gamma"])
 
+    print("Checking close duplicates...")
+
+    # Just warning, not actually removing
+    remove_close_duplicates(final, 1e-4)
+
     print("Checking indices...")
     final_index = remove_exact_duplicates(final, index=True)
-
-    pdb.set_trace()
     
     if len(final) != len(final_index):
         print("WARNING: The data set contained duplicated indices!")
