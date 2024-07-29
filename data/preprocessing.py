@@ -9,6 +9,7 @@ def read_options():
 
     parser = argparse.ArgumentParser()
     parser.add_argument("-t","--thresh",dest="thresh",type=float, default=None, help="Threshold for ionic conductivity. Default is None.")
+    parser.add_argument("-d","--del",dest="delete", action="store_true", default=False, help="Wether to delete close duplicates. Default is False.")
 
     args = parser.parse_args()
 
@@ -223,7 +224,7 @@ def remove_close_duplicates(df, tol=1e-4):
     cols = ["a", "b", "c", "alpha", "beta", "gamma"]
     
     def is_close(val):
-        matches = df.index[(df["Composition"] == val["Composition"]) & (abs(df[cols] - val[cols])/val[cols] < tol).all(axis=1)]
+        matches = df.index[(df["Composition"].apply(is_same_formula, args=(val["Composition"],))) & (abs(df[cols] - val[cols])/val[cols] < tol).all(axis=1)]
         return matches.sort_values()[0] != val.name
         
     n_data = len(df)
@@ -231,10 +232,14 @@ def remove_close_duplicates(df, tol=1e-4):
     duplicated_df = df[dup_rows]
     df = df[~dup_rows]
 
+    def list_duplicates(val):
+        matches = df.index[(df["Composition"].apply(is_same_formula, args=(val["Composition"],))) & (abs(df[cols] - val[cols])/val[cols] < tol).all(axis=1)]
+        return matches.tolist()
+
     n_duplicates = n_data - len(df)
     if n_duplicates > 0:
         print(f"WARNING: The data set contained {n_duplicates} close duplicates!")
-        print(duplicated_df)
+        print(duplicated_df.apply(list_duplicates, axis=1))
     n_data = len(df)
 
     return df
@@ -252,10 +257,19 @@ def remove_exact_duplicates(df, list_columns=None, index=False):
     duplicated_df = df[dup_rows]
     df = df[~dup_rows]
 
+    def list_duplicates(val):
+        if index:
+            return df[(df.index == val.name)].index.tolist()
+        else:
+            if list_columns is not None:
+                return df[(df[list_columns] == val[list_columns]).all(axis=1)].index.tolist()
+            else:
+                return df[(df == val).all(axis=1)].index.tolist()
+            
     n_duplicates = n_data - len(df)
     if n_duplicates > 0:
         print(f"WARNING: The data set contained {n_duplicates} exact duplicates!")
-        print(duplicated_df)
+        print(duplicated_df.apply(list_duplicates, axis=1))
     n_data = len(df)
 
     return df
@@ -292,14 +306,22 @@ def main(args):
     if args.thresh is not None:
         final.loc[final["Ionic conductivity (S cm-1)"] < args.thresh, "Ionic conductivity (S cm-1)"] = args.thresh
 
-    print("Checking inputs...")
+    print("Checking for duplicate inputs..." )
     final = remove_exact_duplicates(final, ["Composition", "Space group number","a", "b", "c", "alpha", "beta", "gamma"])
+    print("WARNING: Entries in the left column were removed.")
 
-    print("Checking close duplicates...")
+    print()
+    print("Checking for close duplicates...")
 
     # Just warning, not actually removing
-    remove_close_duplicates(final, 1e-4)
-
+    final_close = remove_close_duplicates(final, 1e-4)
+    if args.delete:
+        final = final_close
+        print("WARNING: Entries in the left column were removed.")
+    else:
+        print("WARNING: Entries should be checked manually. Rerun with -d to remove entries in the left column.")
+    
+    print("")
     print("Checking indices...")
     final_index = remove_exact_duplicates(final, index=True)
     
