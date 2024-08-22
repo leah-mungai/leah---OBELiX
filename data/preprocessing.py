@@ -281,6 +281,13 @@ def replace_text_IC(cond):
         print("WARNING: IC %d is not a float:"%(i), cond)
     return cond
 
+def which_cif_type(row):
+    if type(row["close match"]) == str and row["close match"].strip().lower() == "yes":
+        return "Close Match"
+    elif type(row["Cif ID"]) == str and row["Cif ID"].strip().lower() == "done":
+        return "Match"
+    else:
+        return "No Match"
 
 def main(args):
     
@@ -298,6 +305,8 @@ def main(args):
         
     # Rename and reorgnize to columns
     final = homin_data[["True Composition", "Space group #","a", "b", "c", "alpha", "beta", "gamma", "Ionic conductivity (S cm-1)", "DOI"]].copy()
+    final["CIF"] = homin_data.apply(which_cif_type, axis=1)
+    
     final.rename({"True Composition": "Composition"}, axis=1, inplace=True)
     final.rename({"Space group #": "Space group number"}, axis=1, inplace=True)
     

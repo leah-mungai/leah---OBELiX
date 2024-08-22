@@ -190,7 +190,9 @@ def main(args):
     if n_duplicates > 0:
         print(f"ATTENTION: The original data set contained {n_duplicates} duplicates!")
         print(duplicated_df)
+
     n_data = len(df)
+    n_data_w_CIF = (df["CIF"] != "No Match").sum()
 
     # Get target variable
     if args.do_log:
@@ -239,6 +241,13 @@ def main(args):
         # If the number of data points is outside the requested range, try again
         if pct_test < args.min_pct_test or pct_test > args.max_pct_test:
             continue
+
+        df_tt_tmp = df.loc[[i for g in groups_tt for i in g]]
+        pct_test_cif = (df_tt_tmp["CIF"] != "No Match").sum() / n_data_w_CIF
+        # If the number of data points with CIFs is outside the requested range, try again
+        if pct_test_cif < args.min_pct_test or pct_test_cif > args.max_pct_test:
+            continue
+        
         # Check distribution of target variable
         groups_tr = groups_shuffled[n_groups_tt:]
         df_tr_tmp = df.loc[[i for g in groups_tr for i in g]]
@@ -264,9 +273,10 @@ def main(args):
             f"No successful split found after {args.max_iters} iterations. Minimum "
             f"EMD found: {min_emd}"
         )
-    print(f"Number of training data points: {len(df_tr)}")
-    print(f"Number of testing  data points: {len(df_tt)}")
+    print(f"Number of training data points: {len(df_tr)}", (df_tr["CIF"] != "No Match").sum())
+    print(f"Number of testing  data points: {len(df_tt)}", (df_tt["CIF"] != "No Match").sum()) 
     print(f"Test percentage: {len(df_tt)/(len(df_tt) + len(df_tr))}")
+    print("Test percentage (CIFs):", (df_tt["CIF"] != "No Match").sum()/((df_tt["CIF"] != "No Match").sum() + (df_tr["CIF"] != "No Match").sum()))
 
     # Sanity checks
     # The sum of the lengths of train and test is equal to the original length
