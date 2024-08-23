@@ -5,12 +5,15 @@ of the target variable (IC) in both splits, as well disjoint papers and composit
 Example:
 
     python train_test_split.py \
-            --input data/data.csv \
-            --output data/split.csv \
-            --pct_test 0.2 \
-            --seed 0 \
+            --input data/processed.csv
+            --output split.csv
+            --use_log
+            --do_plot
+            --max_iters 100000
+            --max_emd 0.42 --max_emd_cif 0.8 --ratio 0.6
+            --seed 33
+            --composition_only
 """
-
 import random
 import sys
 from argparse import ArgumentParser
@@ -82,7 +85,14 @@ def add_args(parser):
         "distribution of the target variable",
     )
     parser.add_argument(
-        "--do_log",
+        "--max_emd_cif",
+        default=0.5,
+        type=float,
+        help="Maximum Earth Mover's distance (Wasserstein) between the train and test "
+        "distribution of the target variable for entries with CIFs",
+    )
+    parser.add_argument(
+        "--use_log",
         default=False,
         action="store_true",
         help="If True, take the log of the target variable before stratifying.",
@@ -123,15 +133,20 @@ def add_args(parser):
         type=int,
         help="Random seed for the train/test split",
     )
+    parser.add_argument(
+        "--ratio",
+        default=0,
+        type=float,
+        help="Relative importance of the EMD of the full dataset and the EMD of the CIFs",
+    )
     return parser
 
 
-def plot(df, args):
+def plot(df, args, name):
     fig, axes = plt.subplots(figsize=(20, 10))
     sns.displot(data=df, x="y", hue="split", kde=True)
     plt.tight_layout()
-    plot_filename = args.output.replace("csv", "pdf")
-    plt.savefig(plot_filename)
+    plt.savefig(name)
 
 
 def stratified_split(y, n_bins, seed):
@@ -195,9 +210,10 @@ def main(args):
     n_data_w_CIF = (df["CIF"] != "No Match").sum()
 
     # Get target variable
-    if args.do_log:
-        df[args.target] = np.log(df[args.target])
-    y = df[args.target]
+    if args.use_log:
+        y = np.log(df[args.target])
+    else:
+        y = df[args.target]
 
     # If plain_startify, do a plain stratified split by the target variable
     if args.plain_stratify:
@@ -219,6 +235,7 @@ def main(args):
     # Otherwise, try brute force splits until the desired stratification is achieved
     success = False
     min_emd = np.inf
+    min_emd_cif = np.inf
     seed = args.seed        
     
     if args.composition_only:
@@ -233,50 +250,61 @@ def main(args):
     n_groups = len(groups)
     n_groups_tt = int(n_groups * args.pct_test)
     rng = np.random.default_rng(seed=seed)
+    emds = []
+    emds_cif = []
     for it in tqdm(range(args.max_iters)):
         groups_shuffled = [groups[i] for i in rng.permutation(len(groups))]
         groups_tt = groups_shuffled[:n_groups_tt]
+
         df_tt_tmp = df.loc[[i for g in groups_tt for i in g]]
+
         pct_test = len(df_tt_tmp) / n_data
         # If the number of data points is outside the requested range, try again
         if pct_test < args.min_pct_test or pct_test > args.max_pct_test:
             continue
 
-        df_tt_tmp = df.loc[[i for g in groups_tt for i in g]]
         pct_test_cif = (df_tt_tmp["CIF"] != "No Match").sum() / n_data_w_CIF
         # If the number of data points with CIFs is outside the requested range, try again
         if pct_test_cif < args.min_pct_test or pct_test_cif > args.max_pct_test:
             continue
-        
+
         # Check distribution of target variable
         groups_tr = groups_shuffled[n_groups_tt:]
         df_tr_tmp = df.loc[[i for g in groups_tr for i in g]]
-        y_tr = df_tr_tmp[args.target]
-        y_tt = df_tt_tmp[args.target]
+
+        y_tr = y.loc[df_tr_tmp.index]
+        y_tt = y.loc[df_tt_tmp.index]
+        y_tr_cif = y.loc[df_tr_tmp.index[df_tr_tmp["CIF"] != "No Match"]]
+        y_tt_cif = y.loc[df_tt_tmp.index[df_tt_tmp["CIF"] != "No Match"]]
         emd = wasserstein_distance(y_tr, y_tt)
-        if emd < min_emd:
+        emd_cif = wasserstein_distance(y_tr_cif, y_tt_cif)
+        emds.append(emd)
+        emds_cif.append(emd_cif)
+        if args.ratio*emd + (1 - args.ratio)*emd_cif < args.ratio*min_emd + (1 - args.ratio)*min_emd_cif:
             min_emd = emd
+            min_emd_cif = emd_cif
             df_tr = df_tr_tmp.copy()
             df_tt = df_tt_tmp.copy()
         # If the EMD between the train and test distribution of the target value is
         # larger than the requested minimum, try again
-        if emd > args.max_emd:
+        if emd > args.max_emd or emd_cif > args.max_emd_cif:
             continue
         else:
             success = True
             break
 
+    print("Average EMD:", np.mean(emds), np.std(emds))
+    print("Average EMD CIF:", np.mean(emds_cif), np.std(emds_cif))
     if success:
-        print(f"Found split with EMD = {emd}!")
+        print(f"Found split with EMD = {emd}, {emd_cif}!")
     else:
         print(
             f"No successful split found after {args.max_iters} iterations. Minimum "
-            f"EMD found: {min_emd}"
+            f"EMD found: {min_emd}, {min_emd_cif}"
         )
-    print(f"Number of training data points: {len(df_tr)}", (df_tr["CIF"] != "No Match").sum())
-    print(f"Number of testing  data points: {len(df_tt)}", (df_tt["CIF"] != "No Match").sum()) 
-    print(f"Test percentage: {len(df_tt)/(len(df_tt) + len(df_tr))}")
-    print("Test percentage (CIFs):", (df_tt["CIF"] != "No Match").sum()/((df_tt["CIF"] != "No Match").sum() + (df_tr["CIF"] != "No Match").sum()))
+    print(f"Number of training data points:", len(df_tr), (df_tr["CIF"] != "No Match").sum())
+    print(f"Number of testing  data points:", len(df_tt), (df_tt["CIF"] != "No Match").sum()) 
+    print("Test percentage:", len(df_tt)/(len(df_tt) + len(df_tr)), (df_tt["CIF"] != "No Match").sum()/((df_tt["CIF"] != "No Match").sum() + (df_tr["CIF"] != "No Match").sum()))
 
     # Sanity checks
     # The sum of the lengths of train and test is equal to the original length
@@ -318,9 +346,14 @@ def main(args):
 
     if args.do_plot:
         split = np.array(["train"] * len(df_tr) + ["test"] * len(df_tt))
-        y = np.concatenate((df_tr[args.target], df_tt[args.target]))
+        y = np.concatenate((np.log(df_tr[args.target]), np.log(df_tt[args.target])))
         df_plot = pd.DataFrame.from_dict({"y": y, "split": split})
-        plot(df_plot, args)
+        plot(df_plot, args, args.output.replace("csv", "pdf"))
+
+        split = np.array(["train cifs"] * (df_tr["CIF"] != "No Match").sum() + ["test cifs"] * (df_tt["CIF"] != "No Match").sum())
+        y = np.concatenate((np.log(df_tr[args.target][df_tr["CIF"] != "No Match"]), np.log(df_tt[args.target][df_tt["CIF"] != "No Match"])))
+        df_plot = pd.DataFrame.from_dict({"y": y, "split": split})
+        plot(df_plot, args, "cif_" + args.output.replace("csv", "pdf"))
 
     output_tr = args.output.replace("split", "train")
     output_tt = args.output.replace("split", "test")
