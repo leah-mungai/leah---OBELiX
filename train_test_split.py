@@ -127,6 +127,13 @@ def add_args(parser):
         action="store_true",
         help="If True, plot distributions of the target variable for each split.",
     )
+
+    parser.add_argument(
+        "--smart_permutation",
+        default=False,
+        action="store_true",
+        help="Whether to use smart permutation or not.",
+    )
     parser.add_argument(
         "--seed",
         default=0,
@@ -182,17 +189,88 @@ def get_all_connected_entries(df, idx, i, properties):
 def get_groups(df, properties):
     idx = []
     allidx = set()
-    while allidx != set(range(len(df))):
-        rest = set(range(len(df))) - allidx
+    while allidx != set(df.index):
+        rest = set(df.index) - allidx
         el = rest.pop()
         idx.append(get_all_connected_entries(df,[el],el,properties))
         allidx = set().union(*idx)
     return idx
 
+def find_groups_to_move(y, y_tr, y_tt, n_bins, groups_lookup):
+
+    bins = np.histogram_bin_edges(y, bins=n_bins)
+    hist_tr = np.histogram(y_tr, bins=bins)[0]/len(y_tr)
+    hist_tt = np.histogram(y_tt, bins=bins)[0]/len(y_tt)
+
+    nonzero_tr = np.nonzero(hist_tr)[0]
+    nonzero_tt = np.nonzero(hist_tt)[0]
+    
+    worst_tr_bin = nonzero_tt[np.argmax(hist_tr[nonzero_tt] - hist_tt[nonzero_tt])]
+    tr_bin_idx = np.digitize(y_tr, bins, right=True) - 1
+    tr_y_idx = y_tr.index[tr_bin_idx==worst_tr_bin]
+
+    tr_groups = groups_lookup.loc[tr_y_idx]
+    
+    worst_tt_bin = nonzero_tr[np.argmax(hist_tt[nonzero_tr] - hist_tr[nonzero_tr])]
+    tt_bin_idx = np.digitize(y_tt, bins, right=True) - 1
+    tt_y_idx = y_tt.index[tt_bin_idx==worst_tt_bin]
+
+    tt_groups = groups_lookup.loc[tt_y_idx]
+    
+    return tr_groups[0], tt_groups[0]
+    
+def smart_permutation(permutation, n_groups_tt, groups, groups_shuffled, groups_lookup, df, y, rng, ratio, n_bins=25, use_sets=True):
+    groups_tt = groups_shuffled[:n_groups_tt]
+    groups_tr = groups_shuffled[n_groups_tt:]
+    
+    y_tr = y.loc[[i for g in groups_tr for i in g]]
+    y_tt = y.loc[[i for g in groups_tt for i in g]]
+
+    tr_worst_groups, tt_worst_groups = find_groups_to_move(y, y_tr, y_tt, n_bins, groups_lookup)
+
+    y_tr_cif = y.loc[y_tr.index[df["CIF"].loc[y_tr.index] != "No Match"]]
+    y_tt_cif = y.loc[y_tt.index[df["CIF"].loc[y_tt.index] != "No Match"]]
+    y_cif = y.loc[df["CIF"] != "No Match"]
+    
+    cif_tr_worst_groups, cif_tt_worst_groups = find_groups_to_move(y_cif, y_tr_cif, y_tt_cif, int(n_bins*len(y_cif)/len(y)), groups_lookup)
+
+    if use_sets:
+        tr_intersection = set(tr_worst_groups).intersection(set(cif_tr_worst_groups))
+        if len(tr_intersection) > 0:
+            tr_group_to_move = rng.choice(list(tr_intersection))
+        else:
+            p = [ratio]*len(set(tr_worst_groups)) + [1 - ratio]*len(set(cif_tr_worst_groups))
+            p = p/np.sum(p)
+            tr_group_to_move = rng.choice(list(set(tr_worst_groups)) + list(set(cif_tr_worst_groups)), p=p)
+
+        tt_intersection = set(tt_worst_groups).intersection(set(cif_tt_worst_groups))
+        if len(tt_intersection) > 0:
+            tt_group_to_move = rng.choice(list(tt_intersection))
+        else:
+            p = [ratio]*len(set(tt_worst_groups)) + [1 - ratio]*len(set(cif_tt_worst_groups))
+            p = p/np.sum(p)
+            tt_group_to_move = rng.choice(list(set(tt_worst_groups)) + list(set(cif_tt_worst_groups)), p=p)
+    else:
+        p = [ratio]*len(tr_worst_groups) + [1 - ratio]*len(cif_tr_worst_groups)
+        p = p/np.sum(p)
+        tr_group_to_move = rng.choice(list(tr_worst_groups) + list(cif_tr_worst_groups), p=p)
+
+        p = [ratio]*len(tt_worst_groups) + [1 - ratio]*len(cif_tt_worst_groups)
+        p = p/np.sum(p)
+        tt_group_to_move = rng.choice(list(tt_worst_groups) + list(cif_tt_worst_groups), p=p)
+    
+    tr_group_idx = np.argwhere(permutation == tr_group_to_move)
+    tt_group_idx = np.argwhere(permutation == tt_group_to_move)
+
+    permutation[tr_group_idx] = tt_group_to_move
+    permutation[tt_group_idx] = tr_group_to_move
+    
+    return permutation
+        
 def main(args):
 
     # Read input CSV
-    df = pd.read_csv(args.input, index_col=False)
+    df = pd.read_csv(args.input, index_col="ID")
     n_data = len(df)
 
     # Check duplicates
@@ -249,11 +327,18 @@ def main(args):
 
     n_groups = len(groups)
     n_groups_tt = int(n_groups * args.pct_test)
+    groups_lookup = pd.DataFrame.from_dict({idx: i for i, g in enumerate(groups) for idx in g}, orient="index")
     rng = np.random.default_rng(seed=seed)
     emds = []
     emds_cif = []
     for it in tqdm(range(args.max_iters)):
-        groups_shuffled = [groups[i] for i in rng.permutation(len(groups))]
+
+        if it > 0 and args.smart_permutation:
+            permutation = smart_permutation(permutation, n_groups_tt, groups, groups_shuffled, groups_lookup, df, y, rng, args.ratio)
+        else:
+            permutation = rng.permutation(n_groups)
+            
+        groups_shuffled = [groups[i] for i in permutation]
         groups_tt = groups_shuffled[:n_groups_tt]
 
         df_tt_tmp = df.loc[[i for g in groups_tt for i in g]]
@@ -281,6 +366,7 @@ def main(args):
         emds.append(emd)
         emds_cif.append(emd_cif)
         if args.ratio*emd + (1 - args.ratio)*emd_cif < args.ratio*min_emd + (1 - args.ratio)*min_emd_cif:
+            print(f"New min EMD: {emd}, {emd_cif}, {args.ratio*emd + (1 - args.ratio)*emd_cif}")
             min_emd = emd
             min_emd_cif = emd_cif
             df_tr = df_tr_tmp.copy()
