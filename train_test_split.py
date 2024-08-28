@@ -10,7 +10,7 @@ Example:
             --use_log
             --do_plot
             --max_iters 100000
-            --max_emd 0.42 --max_emd_cif 0.8 --ratio 0.6
+            --max_distance 0.42 --max_distance_cif 0.8 --ratio 0.6
             --seed 33
             --composition_only
 """
@@ -27,6 +27,9 @@ import yaml
 from scipy.stats import wasserstein_distance
 from sklearn.model_selection import train_test_split
 from tqdm import tqdm
+import signal    
+import matplotlib.pyplot as plt
+from copy import deepcopy
 
 pd.set_option('display.max_rows', 500)
 pd.set_option('display.max_columns', 10)
@@ -78,14 +81,14 @@ def add_args(parser):
         help="Name of the column containing the target variable",
     )
     parser.add_argument(
-        "--max_emd",
+        "--max_distance",
         default=0.5,
         type=float,
         help="Maximum Earth Mover's distance (Wasserstein) between the train and test "
         "distribution of the target variable",
     )
     parser.add_argument(
-        "--max_emd_cif",
+        "--max_distance_cif",
         default=0.5,
         type=float,
         help="Maximum Earth Mover's distance (Wasserstein) between the train and test "
@@ -135,6 +138,24 @@ def add_args(parser):
         help="Whether to use smart permutation or not.",
     )
     parser.add_argument(
+        "--monte_carlo",
+        default=False,
+        action="store_true",
+        help="Whether to randomly swap two groups",
+    )
+    parser.add_argument(
+        "--hist_dist",
+        default=False,
+        action="store_true",
+        help="Use the histgram distance",
+    )
+    parser.add_argument(
+        "--use_sets",
+        default=False,
+        action="store_true",
+        help="Whether to use sets or not.",
+    )
+    parser.add_argument(
         "--seed",
         default=0,
         type=int,
@@ -144,7 +165,7 @@ def add_args(parser):
         "--ratio",
         default=0,
         type=float,
-        help="Relative importance of the EMD of the full dataset and the EMD of the CIFs",
+        help="Relative importance of the DISTANCE of the full dataset and the DISTANCE of the CIFs",
     )
     return parser
 
@@ -196,22 +217,44 @@ def get_groups(df, properties):
         allidx = set().union(*idx)
     return idx
 
-def find_groups_to_move(y, y_tr, y_tt, n_bins, groups_lookup):
+def find_groups_to_move(y, y_tr, y_tt, n_bins, groups_lookup, rng, worst=True, plot=False):
 
     bins = np.histogram_bin_edges(y, bins=n_bins)
     hist_tr = np.histogram(y_tr, bins=bins)[0]/len(y_tr)
     hist_tt = np.histogram(y_tt, bins=bins)[0]/len(y_tt)
 
+    if plot:
+        plt.bar(bins[:-1], hist_tr, label="Train", alpha=0.5)
+        plt.bar(bins[:-1], hist_tt, label="Test", alpha=0.5)
+    
     nonzero_tr = np.nonzero(hist_tr)[0]
     nonzero_tt = np.nonzero(hist_tt)[0]
-    
-    worst_tr_bin = nonzero_tt[np.argmax(hist_tr[nonzero_tt] - hist_tt[nonzero_tt])]
+
+    if worst:
+        worst_tr_bin = nonzero_tt[np.argmax(hist_tr[nonzero_tt] - hist_tt[nonzero_tt])]
+    else:
+        diff = hist_tr[nonzero_tt] - hist_tt[nonzero_tt]
+        p = diff[diff > 0]/np.sum(diff[diff > 0])
+        if len(nonzero_tt[diff > 0]) == 0:
+            worst_tr_bin = len(hist_tr) #not actually an index
+        else:
+            worst_tr_bin = rng.choice(nonzero_tt[diff > 0], p = p)
+        
     tr_bin_idx = np.digitize(y_tr, bins, right=True) - 1
     tr_y_idx = y_tr.index[tr_bin_idx==worst_tr_bin]
 
     tr_groups = groups_lookup.loc[tr_y_idx]
-    
-    worst_tt_bin = nonzero_tr[np.argmax(hist_tt[nonzero_tr] - hist_tr[nonzero_tr])]
+
+    if worst:
+        worst_tt_bin = nonzero_tr[np.argmax(hist_tt[nonzero_tr] - hist_tr[nonzero_tr])]
+    else:
+        diff = hist_tt[nonzero_tr] - hist_tr[nonzero_tr]
+        p = diff[diff > 0]/np.sum(diff[diff > 0])
+        if len(nonzero_tr[diff > 0]) == 0:
+            worst_tt_bin = len(hist_tt) #not actually an index
+        else:
+            worst_tt_bin = rng.choice(nonzero_tr[diff > 0], p = p)
+
     tt_bin_idx = np.digitize(y_tt, bins, right=True) - 1
     tt_y_idx = y_tt.index[tt_bin_idx==worst_tt_bin]
 
@@ -219,20 +262,20 @@ def find_groups_to_move(y, y_tr, y_tt, n_bins, groups_lookup):
     
     return tr_groups[0], tt_groups[0]
     
-def smart_permutation(permutation, n_groups_tt, groups, groups_shuffled, groups_lookup, df, y, rng, ratio, n_bins=25, use_sets=True):
+def smart_permutation(permutation, n_groups_tt, groups, groups_shuffled, groups_lookup, df, y, rng, ratio, n_bins=25, use_sets=True, plot=False):
     groups_tt = groups_shuffled[:n_groups_tt]
     groups_tr = groups_shuffled[n_groups_tt:]
-    
+ 
     y_tr = y.loc[[i for g in groups_tr for i in g]]
     y_tt = y.loc[[i for g in groups_tt for i in g]]
 
-    tr_worst_groups, tt_worst_groups = find_groups_to_move(y, y_tr, y_tt, n_bins, groups_lookup)
-
+    tr_worst_groups, tt_worst_groups = find_groups_to_move(y, y_tr, y_tt, n_bins, groups_lookup, rng, plot=plot)
+    
     y_tr_cif = y.loc[y_tr.index[df["CIF"].loc[y_tr.index] != "No Match"]]
     y_tt_cif = y.loc[y_tt.index[df["CIF"].loc[y_tt.index] != "No Match"]]
     y_cif = y.loc[df["CIF"] != "No Match"]
     
-    cif_tr_worst_groups, cif_tt_worst_groups = find_groups_to_move(y_cif, y_tr_cif, y_tt_cif, int(n_bins*len(y_cif)/len(y)), groups_lookup)
+    cif_tr_worst_groups, cif_tt_worst_groups = find_groups_to_move(y_cif, y_tr_cif, y_tt_cif, int(n_bins*len(y_cif)/len(y)), groups_lookup, rng, plot=False)
 
     if use_sets:
         tr_intersection = set(tr_worst_groups).intersection(set(cif_tr_worst_groups))
@@ -240,24 +283,53 @@ def smart_permutation(permutation, n_groups_tt, groups, groups_shuffled, groups_
             tr_group_to_move = rng.choice(list(tr_intersection))
         else:
             p = [ratio]*len(set(tr_worst_groups)) + [1 - ratio]*len(set(cif_tr_worst_groups))
-            p = p/np.sum(p)
-            tr_group_to_move = rng.choice(list(set(tr_worst_groups)) + list(set(cif_tr_worst_groups)), p=p)
+            if np.sum(p) == 0:
+                tr_group_to_move = rng.choice(permutation[n_groups_tt:])
+            else:
+                p = p/np.sum(p)
+                tr_group_to_move = rng.choice(list(set(tr_worst_groups)) + list(set(cif_tr_worst_groups)), p=p)
 
         tt_intersection = set(tt_worst_groups).intersection(set(cif_tt_worst_groups))
         if len(tt_intersection) > 0:
             tt_group_to_move = rng.choice(list(tt_intersection))
         else:
             p = [ratio]*len(set(tt_worst_groups)) + [1 - ratio]*len(set(cif_tt_worst_groups))
-            p = p/np.sum(p)
-            tt_group_to_move = rng.choice(list(set(tt_worst_groups)) + list(set(cif_tt_worst_groups)), p=p)
+            if np.sum(p) == 0:
+                tt_group_to_move = rng.choice(permutation[:n_groups_tt])
+            else:
+                p = p/np.sum(p)
+                tt_group_to_move = rng.choice(list(set(tt_worst_groups)) + list(set(cif_tt_worst_groups)), p=p)
     else:
         p = [ratio]*len(tr_worst_groups) + [1 - ratio]*len(cif_tr_worst_groups)
-        p = p/np.sum(p)
-        tr_group_to_move = rng.choice(list(tr_worst_groups) + list(cif_tr_worst_groups), p=p)
-
+        if np.sum(p) == 0:
+            tr_group_to_move = rng.choice(permutation[n_groups_tt:])
+        else:
+            p = p/np.sum(p)
+            tr_group_to_move = rng.choice(list(tr_worst_groups) + list(cif_tr_worst_groups), p=p)
+        
         p = [ratio]*len(tt_worst_groups) + [1 - ratio]*len(cif_tt_worst_groups)
-        p = p/np.sum(p)
-        tt_group_to_move = rng.choice(list(tt_worst_groups) + list(cif_tt_worst_groups), p=p)
+        if np.sum(p) == 0:
+            tt_group_to_move = rng.choice(permutation[:n_groups_tt])
+        else:
+            p = p/np.sum(p)
+            tt_group_to_move = rng.choice(list(tt_worst_groups) + list(cif_tt_worst_groups), p=p)
+
+
+    if plot:
+        
+        bins = np.histogram_bin_edges(y, bins=n_bins)
+        y_tr_to_move = y.loc[groups[tr_group_to_move]]
+        y_tt_to_move = y.loc[groups[tt_group_to_move]]
+        
+        hist_tr_to_move = np.histogram(y_tr_to_move, bins=bins)[0]/len(y_tr)
+        hist_tt_to_move = np.histogram(y_tt_to_move, bins=bins)[0]/len(y_tt)
+        
+        plt.bar(bins[:-1], -hist_tr_to_move, label="Train to move", alpha=0.5)
+        plt.bar(bins[:-1], -hist_tt_to_move, label="Test to move", alpha=0.5)
+        
+        plt.legend()
+        
+        plt.show()
     
     tr_group_idx = np.argwhere(permutation == tr_group_to_move)
     tt_group_idx = np.argwhere(permutation == tt_group_to_move)
@@ -266,7 +338,13 @@ def smart_permutation(permutation, n_groups_tt, groups, groups_shuffled, groups_
     permutation[tt_group_idx] = tr_group_to_move
     
     return permutation
-        
+
+def hist_distance(y, y_tr, y_tt, n_bins=25):
+    bins = np.histogram_bin_edges(y, bins=n_bins)
+    hist_tr = np.histogram(y_tr, bins=bins)[0]/len(y_tr)
+    hist_tt = np.histogram(y_tt, bins=bins)[0]/len(y_tt)
+    return np.mean(np.abs(hist_tr - hist_tt))
+
 def main(args):
 
     # Read input CSV
@@ -300,8 +378,8 @@ def main(args):
         )
         y_tr = y[indices_tr]
         y_tt = y[indices_tt]
-        emd = wasserstein_distance(y_tr, y_tt)
-        print(f"EMD between splits: {emd}")
+        distance = wasserstein_distance(y_tr, y_tt)
+        print(f"DISTANCE between splits: {distance}")
 
         if args.do_plot:
             split = np.array(["train"] * len(y))
@@ -312,8 +390,8 @@ def main(args):
 
     # Otherwise, try brute force splits until the desired stratification is achieved
     success = False
-    min_emd = np.inf
-    min_emd_cif = np.inf
+    min_distance = 100
+    min_distance_cif = 100
     seed = args.seed        
     
     if args.composition_only:
@@ -321,7 +399,6 @@ def main(args):
     else:
         groups = get_groups(df, ["Composition", "Space group number"])
 
-    #print(df[["Composition", "Space group number", "DOI"]].loc[groups[0]])
     print("Number of groups:", len(groups))
     print("Number of entries per group:", [len(g) for g in groups])
 
@@ -329,14 +406,29 @@ def main(args):
     n_groups_tt = int(n_groups * args.pct_test)
     groups_lookup = pd.DataFrame.from_dict({idx: i for i, g in enumerate(groups) for idx in g}, orient="index")
     rng = np.random.default_rng(seed=seed)
-    emds = []
-    emds_cif = []
+    distances = []
+    distances_cif = []
     for it in tqdm(range(args.max_iters)):
 
         if it > 0 and args.smart_permutation:
-            permutation = smart_permutation(permutation, n_groups_tt, groups, groups_shuffled, groups_lookup, df, y, rng, args.ratio)
-        else:
+            permutation = smart_permutation(best_permutation, n_groups_tt, groups, best_groups_shuffled, groups_lookup, df, y, rng, args.ratio, use_sets=args.use_sets)
+        elif it > 0:
+            permutation = best_permutation.copy()
+
+        if it > 0 and args.monte_carlo:
+
+            tt_group_idx = rng.integers(0, n_groups_tt-1)
+            tr_group_idx = rng.integers(n_groups_tt, n_groups-1)
+
+            tr_group_to_move = deepcopy(permutation[tr_group_idx])
+
+            permutation[tr_group_idx] = deepcopy(permutation[tt_group_idx])
+            permutation[tt_group_idx] = tr_group_to_move
+            
+        if it == 0 or (not args.smart_permutation and not args.monte_carlo):
             permutation = rng.permutation(n_groups)
+            best_permutation = deepcopy(permutation)
+            best_groups_shuffled = [groups[i] for i in permutation]
             
         groups_shuffled = [groups[i] for i in permutation]
         groups_tt = groups_shuffled[:n_groups_tt]
@@ -361,33 +453,62 @@ def main(args):
         y_tt = y.loc[df_tt_tmp.index]
         y_tr_cif = y.loc[df_tr_tmp.index[df_tr_tmp["CIF"] != "No Match"]]
         y_tt_cif = y.loc[df_tt_tmp.index[df_tt_tmp["CIF"] != "No Match"]]
-        emd = wasserstein_distance(y_tr, y_tt)
-        emd_cif = wasserstein_distance(y_tr_cif, y_tt_cif)
-        emds.append(emd)
-        emds_cif.append(emd_cif)
-        if args.ratio*emd + (1 - args.ratio)*emd_cif < args.ratio*min_emd + (1 - args.ratio)*min_emd_cif:
-            print(f"New min EMD: {emd}, {emd_cif}, {args.ratio*emd + (1 - args.ratio)*emd_cif}")
-            min_emd = emd
-            min_emd_cif = emd_cif
+        if not args.hist_dist:
+            distance = wasserstein_distance(y_tr, y_tt)
+            distance_cif = wasserstein_distance(y_tr_cif, y_tt_cif)
+        else:
+            distance = hist_distance(y, y_tr, y_tt)
+            distance_cif = hist_distance(y, y_tr_cif, y_tt_cif)
+            
+        distances.append(distance)
+        distances_cif.append(distance_cif)
+
+        if args.ratio*distance + (1 - args.ratio)*distance_cif < args.ratio*min_distance + (1 - args.ratio)*min_distance_cif:
+            print(f"New min DISTANCE: {distance}, {distance_cif}, {args.ratio*distance + (1 - args.ratio)*distance_cif}")
+            best_permutation = deepcopy(permutation)
+            best_groups_shuffled = deepcopy(groups_shuffled)
+            min_distance = distance
+            min_distance_cif = distance_cif
             df_tr = df_tr_tmp.copy()
             df_tt = df_tt_tmp.copy()
-        # If the EMD between the train and test distribution of the target value is
+        # If the DISTANCE between the train and test distribution of the target value is
         # larger than the requested minimum, try again
-        if emd > args.max_emd or emd_cif > args.max_emd_cif:
+        if distance > args.max_distance or distance_cif > args.max_distance_cif:
             continue
         else:
             success = True
             break
 
-    print("Average EMD:", np.mean(emds), np.std(emds))
-    print("Average EMD CIF:", np.mean(emds_cif), np.std(emds_cif))
+    plt.plot(distances)
+    plt.plot(distances_cif)
+    
+    plt.show()
+        
+    print("Average DISTANCE:", np.mean(distances), np.std(distances))
+    print("Average DISTANCE CIF:", np.mean(distances_cif), np.std(distances_cif))
     if success:
-        print(f"Found split with EMD = {emd}, {emd_cif}!")
+        print(f"Found split with DISTANCE = {distance}, {distance_cif}!")
     else:
         print(
             f"No successful split found after {args.max_iters} iterations. Minimum "
-            f"EMD found: {min_emd}, {min_emd_cif}"
+            f"DISTANCE found: {min_distance}, {min_distance_cif}"
         )
+    y_tr = y.loc[df_tr.index]
+    y_tt = y.loc[df_tt.index]
+    y_tr_cif = y.loc[df_tr.index[df_tr["CIF"] != "No Match"]]
+    y_tt_cif = y.loc[df_tt.index[df_tt["CIF"] != "No Match"]]
+
+    
+    emd = wasserstein_distance(y_tr, y_tt)
+    emd_cif = wasserstein_distance(y_tr_cif, y_tt_cif)
+    
+    hist_dist = hist_distance(y, y_tr, y_tt)
+    hist_dist_cif = hist_distance(y, y_tr_cif, y_tt_cif)
+
+    print()
+    print(f"Final metrics full dataset EMD: {emd}, hist dist: {hist_dist}")
+    print(f"Final metrics cifs: EMD: {emd_cif}, hist dist: {hist_dist_cif}")
+    
     print(f"Number of training data points:", len(df_tr), (df_tr["CIF"] != "No Match").sum())
     print(f"Number of testing  data points:", len(df_tt), (df_tt["CIF"] != "No Match").sum()) 
     print("Test percentage:", len(df_tt)/(len(df_tt) + len(df_tr)), (df_tt["CIF"] != "No Match").sum()/((df_tt["CIF"] != "No Match").sum() + (df_tr["CIF"] != "No Match").sum()))
@@ -456,7 +577,7 @@ def args2yaml(args):
         args (argparse.Namespace): the parsed arguments
     """
     output = Path(args.output)
-    output_yaml = output.parent / (output.stem + ".yaml")
+    output_yaml = output.parent / ("arguments_" + output.stem + ".yaml")
     with open(output_yaml, "w") as f:
         yaml.dump(dict(vars(args)), f)
 

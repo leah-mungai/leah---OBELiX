@@ -1,0 +1,20 @@
+composition_only: true
+do_plot: true
+hist_dist: true
+input: data/processed.csv
+max_distance: 0.001
+max_distance_cif: 0.01
+max_iters: 10000
+max_pct_test: 0.3
+min_pct_test: 0.2
+monte_carlo: true
+n_bins_stratify: 10
+output: split.csv
+pct_test: 0.25
+plain_stratify: false
+ratio: 0.6
+seed: 1
+smart_permutation: false
+target: Ionic conductivity (S cm-1)
+use_log: true
+use_sets: false
