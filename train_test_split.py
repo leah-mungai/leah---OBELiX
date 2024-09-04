@@ -564,8 +564,8 @@ def main(args):
 
     output_tr = args.output.replace("split", "train")
     output_tt = args.output.replace("split", "test")
-    df_tr.to_csv(output_tr, index=False)
-    df_tt.to_csv(output_tt, index=False)
+    df_tr.to_csv(output_tr, index=True)
+    df_tt.to_csv(output_tt, index=True)
 
 
 def args2yaml(args):
