@@ -1,5 +1,4 @@
 import numpy as np
-from mendeleev.fetch import fetch_table
 import re
 import pandas as pd
 import argparse
@@ -319,11 +318,19 @@ def main(args):
     final = remove_exact_duplicates(final, ["Composition", "Space group number","a", "b", "c", "alpha", "beta", "gamma"])
     print("WARNING: Entries in the left column were removed.")
 
+    print("Checking for duplicate comp+spg and paper..." )
+    final_close = remove_exact_duplicates(final, ["Composition", "Space group number", "DOI"])
+    if args.delete:
+        final = final_close
+        print("WARNING: Entries in the left column were removed.")
+    else:
+        print("WARNING: Entries should be checked manually. Rerun with -d to remove entries in the left column.")
+
     print()
     print("Checking for close duplicates...")
 
     # Just warning, not actually removing
-    final_close = remove_close_duplicates(final, 1e-4)
+    final_close = remove_close_duplicates(final, 1e-1)
     if args.delete:
         final = final_close
         print("WARNING: Entries in the left column were removed.")
