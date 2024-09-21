@@ -8,6 +8,20 @@ from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 import numpy as np
 import warnings
 
+def remove_partial_occ(structure):
+    to_remove = []
+    for i, site in enumerate(structure):
+        for k,v in site.species.as_dict().items():
+            v = int(round(v))
+            if v == 1:
+                new_occ = {k: 1}
+                structure[i]._species = Composition(new_occ) 
+                break
+        else:
+            to_remove.append(i)
+    structure.remove_sites(to_remove)
+    return structure
+
 def get_occ(atoms):
     symbols = list(atoms.symbols)
     coords = list(atoms.get_positions())
@@ -46,8 +60,6 @@ def ase_read(filename, **kwargs):
     pathlib.Path(tmpname).unlink()
     return atoms
 
-data = pd.read_excel("raw.xlsx", index_col="ID")
-
 def is_fractional(formula):
     broken_down_formula = re.findall("([A-Za-z]{1,2})([\.0-9]*)", formula)
     for elem, number in broken_down_formula:
@@ -57,6 +69,7 @@ def is_fractional(formula):
             return True
     return False
 
+data = pd.read_excel("raw.xlsx", index_col="ID")
 folder = "new_cifs/cifs/"
 problems = dict()
 for i, row in data.iterrows():
@@ -83,6 +96,10 @@ for i, row in data.iterrows():
         structure.to("anon_cifs/" + i + ".cif", symprec=2e-3)
     except:
         problems[i] = "Could not write anonymized cif"
+
+    np_structure = remove_partial_occ(structure)
+
+    np_structure.to("np_cifs/" + i + ".cif", symprec=2e-3)
     
     #write("anon_cifs/" + i + ".cif", atoms, format="cif")
 
