@@ -1,0 +1,59 @@
+seed: 10
+
+# File and directory paths
+runtime_files:
+  - './split.npz'
+  - './splitting.lock'
+  - './new_dataset.db/cache'
+  - './new_dataset.db/tmp'
+  - './new_dataset.db'
+
+updated_file_path: 'filtered_train.csv'
+cif_file_dir: 'cifs'
+db_path: './new_dataset.db'
+plot_save_path: 'plot_ionic_conductivity.png'
+train_pred_painn_csv: 'train_predictions_painn.csv'
+val_pred_painn_csv: 'val_predictions_painn.csv'
+test_pred_painn_csv: 'test_predictions_painn.csv'
+
+# Data processing parameters
+file_prefix: 'train'
+remove_mean: true
+remove_atomrefs: false
+cutoff: 5
+n_atom_basis: 30
+n_interactions: 3
+batch_size: 100
+num_train: 178
+num_val: 38
+num_test: 38
+
+# CIF file reading parameters
+cif_read_options:
+  index: -1
+  store_tags: false
+  primitive_cell: false
+  subtrans_included: true
+  fractional_occupancies: true
+  reader: 'ase'
+
+# Number of workers and memory handling
+num_workers: 0
+pin_memory: false
+
+# Trainer configurations
+max_epochs: 400
+learning_rate: 0.0001
+weight_decay: 0
+
+# Logging and checkpoint paths
+logger_painn_dir: 'training_logs/painn'
+model_checkpoint_path: 'training_logs/best_model'
+painn_root_dir: 'training_logs/painn'
+
+# Plot settings
+high_dpi: 300
+
+# Metrics settings
+monitor_metric: 'val_loss'
+save_top_k: 1
