@@ -4,29 +4,28 @@ seed: 10
 runtime_files:
   - './split.npz'
   - './splitting.lock'
-  - './new_dataset.db/cache'
-  - './new_dataset.db/tmp'
-  - './new_dataset.db'
-
-updated_file_path: 'filtered_train.csv'
-cif_file_dir: 'cifs'
-db_path: './new_dataset.db'
+  
+database_path: '../../../data/processed.csv'
+test_path: '../../../test_idx.csv'
+cif_file_dir: '../../../data/np_cifs'
+overwrite_db: True
+db_dir: '.'
 plot_save_path: 'plot_ionic_conductivity.png'
 train_pred_painn_csv: 'train_predictions_painn.csv'
 val_pred_painn_csv: 'val_predictions_painn.csv'
 test_pred_painn_csv: 'test_predictions_painn.csv'
+plot: True
 
 # Data processing parameters
 file_prefix: 'train'
 remove_mean: true
 remove_atomrefs: false
 cutoff: 5
-n_atom_basis: 30
+n_atom_basis: 20
 n_interactions: 3
-batch_size: 100
-num_train: 178
-num_val: 38
-num_test: 38
+batch_size: 203
+n_train_data: 10
+num_folds: 2
 
 # CIF file reading parameters
 cif_read_options:
@@ -38,12 +37,12 @@ cif_read_options:
   reader: 'ase'
 
 # Number of workers and memory handling
-num_workers: 0
+num_workers: 4
 pin_memory: false
 
 # Trainer configurations
-max_epochs: 400
-learning_rate: 0.0001
+max_epochs: 3
+learning_rate: 0.01
 weight_decay: 0
 
 # Logging and checkpoint paths
