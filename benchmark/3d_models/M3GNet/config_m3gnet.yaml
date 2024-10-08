@@ -1,7 +1,7 @@
 # Dataset paths and parameters
 data:
   csv_file: "filtered_train.csv"
-  cif_directory: "anon_cifs"
+  cif_directory: "/lustre07/scratch/jabou/models/CGCNN-np"
   ionic_conductivity_column: "Ionic conductivity (S cm-1)"
 
 # Graph settings
@@ -11,13 +11,13 @@ graph:
 
 # Dataset splitting
 split:
-  frac_list: [0.70, 0.15, 0.15]
+  k_folds: 5
   shuffle: True
   random_state: 42
 
 # DataLoader settings
 dataloader:
-  batch_size: 100
+  batch_size: 50
   num_workers: 0
 
 # Model parameters
@@ -29,7 +29,7 @@ model:
 training:
   lr: 0.001
   max_epochs: 100
-  accelerator: "cpu"
+  accelerator: "gpu"
   log_every_n_steps: 1
 
 # Logger settings
@@ -41,3 +41,9 @@ logger:
 plot:
   fig_size: [10, 6]
   dpi: 300
+
+# Output settings
+output:
+  metrics_file: "metrics.csv"
+  results_csv: "cross_validation_results.csv"
+  raw_data_dir: "./dgl"
