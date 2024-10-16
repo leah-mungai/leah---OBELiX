@@ -1,7 +1,8 @@
 # Dataset paths and parameters
 data:
-  csv_file: "filtered_train.csv"
-  cif_directory: "/lustre07/scratch/jabou/models/CGCNN-np"
+  csv_train_file: "filtered_train.csv"
+  csv_test_file: "filtered_test.csv"
+  cif_directory: "cif"
   ionic_conductivity_column: "Ionic conductivity (S cm-1)"
 
 # Graph settings
@@ -17,25 +18,48 @@ split:
 
 # DataLoader settings
 dataloader:
-  batch_size: 50
+  batch_size: 32
   num_workers: 0
 
-# Model parameters
-model:
+# Model parameters for M3GNet
+m3gnet:
   is_intensive: True
-  readout_type: "set2set"
+  readout_type: ["set2set", "weighted_atom", "reduce_atom"]
+  max_n: [1, 2, 3]
+  max_l: [1, 2, 3]
+  nblocks: [2, 3, 4]
+  dim_node_embedding: [32, 64, 128]
+  dim_edge_embedding: [32, 64, 128]
+  units: [32, 64, 128]
+  threebody_cutoff: [4.0, 5.0, 6.0]
+  cutoff: [4.0, 5.0, 6.0]
+
+# Model parameters for SO3Net
+so3net:
+  is_intensive: True
+  readout_type: ["set2set", "weighted_atom", "reduce_atom"]
+  nmax: [1, 2, 3]
+  lmax: [1, 2, 3]
+  nblocks: [2, 3, 4]
+  dim_node_embedding: [32, 64, 128]
+  units: [32, 64, 128]
+  cutoff: [4.0, 5.0, 6.0]
+  nlayers_readout: [3, 4, 5]
+
+# Hyperparameter tuning space
+hyperparameters:
+  num_cases: 100  # Number of random hyperparameter combinations to try...
 
 # Training parameters
 training:
-  lr: 0.001
-  max_epochs: 100
   accelerator: "gpu"
-  log_every_n_steps: 1
+  max_epochs: 60 
+  lr: 0.001   
 
 # Logger settings
 logger:
   save_dir: "logs"
-  name: "M3GNet_training"
+  name: "Model_training"
 
 # Plot settings
 plot:
@@ -46,4 +70,5 @@ plot:
 output:
   metrics_file: "metrics.csv"
   results_csv: "cross_validation_results.csv"
-  raw_data_dir: "./dgl"
+  raw_data_dir_train: "./dgl_train"
+  raw_data_dir_test: "./dgl_test"
