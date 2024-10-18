@@ -26,6 +26,7 @@ n_interactions: 3
 batch_size: 203
 n_train_data: 10
 num_folds: 2
+n_param_comb: 100
 
 # CIF file reading parameters
 cif_read_options:

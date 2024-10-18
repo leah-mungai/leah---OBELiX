@@ -17,6 +17,7 @@ from sklearn.metrics import mean_absolute_error, r2_score
 import matplotlib.pyplot as plt
 from schnetpack.data import ASEAtomsData
 from copy import deepcopy
+from collections import OrderedDict
 
 metrics_df = 0
 
@@ -32,7 +33,38 @@ def switch_getitem(cls, new_getitem=None):
 ASEAtomsData.switch_getitem = switch_getitem
 ASEAtomsData.original_getitem = deepcopy(ASEAtomsData.__getitem__)
 
+def random_product(n, *args):
+    sizes = torch.tensor([len(arg) for arg in args])
+    Ns = choice(torch.prod(sizes), n, replace=False)
+    combs = []
+    for N in Ns:
+        comb = []
+        for i, arg in enumerate(args):
+            comb.append(arg[N//int(torch.prod(sizes[i+1:]))])
+            N = N%int(torch.prod(sizes[i+1:]))
+        combs.append(comb)
 
+    return combs
+
+def generate_configs(config):
+
+    adjustable_params = OrderedDict()
+    for k,v in config.items():
+        if isinstance(v, list):
+            adjustable_params[k] = v
+
+    list_params = random_product(config["n_param_combs"], *adjustable_params.values())
+
+    possible_configs = []
+    for params in list_params:
+        tmp_config = deepcopy(config)
+        for i, k in enumerate(adjustable_params.keys()):
+            tmp_config[k] = params[i]
+        possible_configs.append(tmp_config)
+
+    return possible_configs
+
+    
 class MetricTracker(pl.Callback):
     def on_train_epoch_end(self, trainer, pl_module):
         epoch = trainer.current_epoch
@@ -86,38 +118,6 @@ def set_random_seed(seed):
         torch.cuda.manual_seed_all(seed)
         torch.backends.cudnn.deterministic = True
         torch.backends.cudnn.benchmark = False
-
-def evaluate_model_on_test(model, test_loader, id_list):
-    test_ids, actual_test_ionic_conductivities, predicted_test_ionic_conductivities = [], [], []
-
-    # Put model in evaluation mode
-    model.eval()
-
-    # No need for gradients during evaluation
-    with torch.no_grad():
-        for batch in test_loader:
-            actual_test_ionic_conductivities.extend(batch['ionic_conductivity'].cpu().numpy())
-            predictions = model(batch)['ionic_conductivity'].cpu().detach().numpy()
-
-            for i in range(len(predictions)):
-                index = batch['_idx'][i].item()
-                predicted_test_ionic_conductivities.append(predictions[i])
-                test_ids.append(id_list[index])
-
-    # Calculate MAE for test set
-    mae_test = mean_absolute_error(actual_test_ionic_conductivities, predicted_test_ionic_conductivities)
-    print(f"Test MAE: {mae_test}")
-
-    # Save predictions to CSV
-    df = pd.DataFrame({
-        'ID': test_ids,
-        'Actual Ionic Conductivity (log-transformed)': actual_test_ionic_conductivities,
-        'Predicted Ionic Conductivity': predicted_test_ionic_conductivities
-    })
-    df.to_csv(config["test_pred_painn_csv"], index=False)
-    print(f"Test predictions saved to {config['test_pred_painn_csv']}")
-
-    return mae_test
 
 def get_pred_vs_targets(model, dataloader):
     actual_ionic_conductivities, predicted_ionic_conductivities = [], []
@@ -395,7 +395,7 @@ def main():
     train_data = data[~data.index.isin(test.index)]
     test_data = data[data.index.isin(test.index)]
     
-    possible_configs = [config]
+    possible_configs = generate_configs(config)
     
     best_val_mae = np.inf
     for tmp_config in possible_configs:
@@ -431,7 +431,7 @@ def main():
     # Evaluate model on test set
     print("Evaluating model on test set...")
     test_db_path = config["db_dir"] + "/test.db"
-    test_props = prepare_data(db_path, test_data, best_config)
+    test_props = prepare_data(test_db_path, test_data, best_config)
     split_file = config["db_dir"] + "/split.npz"    
     np.savez(split_file, train_idx=[], val_idx=[], test_idx=np.arange(len(test_props)))
     test_data = setup_dataloader(test_props, best_config, split_file, test_db_path)
