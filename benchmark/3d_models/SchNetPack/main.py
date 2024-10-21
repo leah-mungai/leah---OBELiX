@@ -396,7 +396,7 @@ def crossval(props, db_path, train_data, config, rng, savedir):
 
 def main():
 
-    with open('config_painn.yaml', 'r') as file:
+    with open('config.yaml', 'r') as file:
         config = yaml.safe_load(file)
 
     ####### step 1: Set Random Seed
