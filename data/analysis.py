@@ -268,6 +268,18 @@ def periodic_table_map(data):
     ptable_heatmap(occurences, colormap="Spectral_r")
 
     plt.savefig("prediodic_table.png")
+
+def print_stats(data):
+    mean_train = np.log10(data["Ionic conductivity (S cm-1)"][~data["in_test"]]).mean()
+    mean_test = np.log10(data["Ionic conductivity (S cm-1)"][data["in_test"]]).mean()
+    std_train = np.log10(data["Ionic conductivity (S cm-1)"][~data["in_test"]]).std()
+    std_test = np.log10(data["Ionic conductivity (S cm-1)"][data["in_test"]]).std()
+    mae_train = np.abs(np.log10(data["Ionic conductivity (S cm-1)"][~data["in_test"]])-mean_train).mean()
+    mae_test = np.abs(np.log10(data["Ionic conductivity (S cm-1)"][data["in_test"]])-mean_test).mean()
+    print("Train: ", mean_train, std_train, mae_train)
+    print("Test: ", mean_test, std_test, mae_test)
+
+    print("Train avg on test: ", np.abs(mean_train - np.log10(data["Ionic conductivity (S cm-1)"][data["in_test"]])).mean())
     
 def spg_charts(data):
     from pymatviz import spacegroup_sunburst
@@ -281,7 +293,7 @@ def spg_charts(data):
 if __name__ == "__main__":
 
     data = pd.read_csv('processed.csv', index_col="ID")
-    test =  pd.read_csv('../test_idx.csv', index_col="ID")
+    test = pd.read_csv('../test_idx.csv', index_col="ID")
     data["in_test"] = data.index.isin(test.index)
 
     # Similar entries plots
@@ -295,7 +307,15 @@ if __name__ == "__main__":
 
     # Periodec table heatmap
     periodic_table_map(data)
-    
+
+    # Space group pi charts
     spg_charts(data)
+
+    # Stats
+    print("Stats on full dataset ----------------")
+    print_stats(data)
+    print("Stats on CIF dataset -----------------")
+    print_stats(data[data["CIF"] != "No Match"])
+    
     
     plt.show()

@@ -8,7 +8,7 @@ runtime_files:
 database_path: '../../../data/processed.csv'
 test_path: '../../../test_idx.csv'
 cif_file_dir: '../../../data/np_cifs'
-overwrite_db: False
+overwrite_db: True
 db_dir: '.'
 extra_plots: True
 show: True
@@ -18,11 +18,11 @@ representation: "painn"
 file_prefix: 'train'
 remove_mean: true
 remove_atomrefs: false
-cutoff: [5, 10]
-n_atom_basis: [20, 40]
+cutoff: [5]
+n_atom_basis: [20]
 n_interactions: 3
-batch_size: 203
-n_train_data: 10
+batch_size: 32
+n_train_data: 600
 num_folds: 2
 n_param_combs: 100
 actual_list: [runtime_files]
@@ -41,8 +41,8 @@ num_workers: 4
 pin_memory: false
 
 # Trainer configurations
-max_epochs: 3
-learning_rate: 0.01
+max_epochs: 30
+learning_rate: 0.001
 weight_decay: 0
 
 # Logging and checkpoint paths

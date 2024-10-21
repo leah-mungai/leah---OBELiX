@@ -497,6 +497,10 @@ def main():
                              pred_test, target_test,
                              "final model vs test", config["out_dir"] + "/target_vs_train.svg")
 
+    print("Final model evaluation:")
+    print("Final train MAE:", np.mean(np.abs(pred_train - target_train)))
+    print("Final test MAE:", np.mean(np.abs(pred_test - target_test)))
+
     if config["show"]:
         plt.show()
 
