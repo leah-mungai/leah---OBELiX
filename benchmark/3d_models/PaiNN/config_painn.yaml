@@ -8,25 +8,24 @@ runtime_files:
 database_path: '../../../data/processed.csv'
 test_path: '../../../test_idx.csv'
 cif_file_dir: '../../../data/np_cifs'
-overwrite_db: True
+overwrite_db: False
 db_dir: '.'
-plot_save_path: 'plot_ionic_conductivity.png'
-train_pred_painn_csv: 'train_predictions_painn.csv'
-val_pred_painn_csv: 'val_predictions_painn.csv'
-test_pred_painn_csv: 'test_predictions_painn.csv'
-plot: True
+extra_plots: True
+show: True
 
 # Data processing parameters
+representation: "painn"
 file_prefix: 'train'
 remove_mean: true
 remove_atomrefs: false
-cutoff: 5
-n_atom_basis: 20
+cutoff: [5, 10]
+n_atom_basis: [20, 40]
 n_interactions: 3
 batch_size: 203
 n_train_data: 10
 num_folds: 2
-n_param_comb: 100
+n_param_combs: 100
+actual_list: [runtime_files]
 
 # CIF file reading parameters
 cif_read_options:
@@ -47,9 +46,7 @@ learning_rate: 0.01
 weight_decay: 0
 
 # Logging and checkpoint paths
-logger_painn_dir: 'training_logs/painn'
-model_checkpoint_path: 'training_logs/best_model'
-painn_root_dir: 'training_logs/painn'
+out_dir: 'painn'
 
 # Plot settings
 high_dpi: 300

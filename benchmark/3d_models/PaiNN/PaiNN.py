@@ -13,11 +13,12 @@ import schnetpack as spk
 from schnetpack.nn import GaussianRBF, CosineCutoff
 import torchmetrics
 import pytorch_lightning as pl
-from sklearn.metrics import mean_absolute_error, r2_score
 import matplotlib.pyplot as plt
 from schnetpack.data import ASEAtomsData
 from copy import deepcopy
 from collections import OrderedDict
+from numpy.random import choice
+from pathlib import Path
 
 metrics_df = 0
 
@@ -35,7 +36,10 @@ ASEAtomsData.original_getitem = deepcopy(ASEAtomsData.__getitem__)
 
 def random_product(n, *args):
     sizes = torch.tensor([len(arg) for arg in args])
-    Ns = choice(torch.prod(sizes), n, replace=False)
+    if torch.prod(sizes) > n:
+        Ns = choice(torch.prod(sizes), n, replace=False)
+    else:
+        Ns = np.arange(torch.prod(sizes))
     combs = []
     for N in Ns:
         comb = []
@@ -49,9 +53,13 @@ def random_product(n, *args):
 def generate_configs(config):
 
     adjustable_params = OrderedDict()
-    for k,v in config.items():
-        if isinstance(v, list):
+    for k, v in config.items():
+        if isinstance(v, list) and k not in (config["actual_list"] + ["actual_list"]):
             adjustable_params[k] = v
+
+    print("Grid seach through the following  hyper-parameters:")
+    for k, v in adjustable_params.items():
+        print(f"{k}: {v}")
 
     list_params = random_product(config["n_param_combs"], *adjustable_params.values())
 
@@ -61,8 +69,10 @@ def generate_configs(config):
         for i, k in enumerate(adjustable_params.keys()):
             tmp_config[k] = params[i]
         possible_configs.append(tmp_config)
-
-    return possible_configs
+        
+    param_grid = pd.DataFrame(np.array(list_params), columns=list(adjustable_params.keys()))
+        
+    return possible_configs, param_grid
 
     
 class MetricTracker(pl.Callback):
@@ -107,7 +117,7 @@ class MetricTracker(pl.Callback):
         }])], ignore_index=True)
 
         # Save the dataframe to a CSV file after each epoch
-        metrics_df.to_csv("metrics_output.csv", index=False)
+        metrics_df.to_csv(trainer.default_root_dir + "/metrics_output.csv", index=False)
 
 def set_random_seed(seed):
     torch.manual_seed(seed)
@@ -128,7 +138,7 @@ def get_pred_vs_targets(model, dataloader):
             predicted_ionic_conductivities.append(model(batch)['ionic_conductivity'].cpu().detach().numpy())
     return np.concatenate(predicted_ionic_conductivities), np.concatenate(actual_ionic_conductivities)
 
-def plot_actual_vs_predicted(pred_train, target_train, pred_val, target_val, model_name, save_path, dpi=300):
+def plot_actual_vs_predicted(pred_train, target_train, pred_val, target_val, model_name, save_path):
     
     plt.figure(figsize=(6, 6))
     plt.scatter(target_train, pred_train, label='Train', s=10)
@@ -144,12 +154,7 @@ def plot_actual_vs_predicted(pred_train, target_train, pred_val, target_val, mod
     plt.ylabel('Predicted Ionic Conductivity')
     plt.title(f'Actual vs Predicted Ionic Conductivity ({model_name})')
 
-    # Save the plot as PNG with high resolution
-    plt.savefig(save_path, dpi=dpi, bbox_inches='tight')
-
-    plt.show()
-
-    plt.close()
+    plt.savefig(save_path)
 
 def prepare_data(db_path, train_data, config):
     
@@ -160,44 +165,47 @@ def prepare_data(db_path, train_data, config):
 
         atoms_list, property_list, ionic_conductivity_list, id_list = [], [], [], []
 
+        print("Reading CIFs...", end='', flush=True)
         for idx, row in train_data.iterrows():
 
             cif_file_path = os.path.join(config["cif_file_dir"], f'{idx}.cif')  # Path from config.yam
 
-            try:
-                atoms = read(cif_file_path,
-                             index=config['cif_read_options']['index'],
-                             store_tags=config['cif_read_options']['store_tags'],
-                             primitive_cell=config['cif_read_options']['primitive_cell'],
-                             subtrans_included=config['cif_read_options']['subtrans_included'],
-                             fractional_occupancies=config['cif_read_options']['fractional_occupancies'],
-                             reader=config['cif_read_options']['reader'])
-
-                symbols = list(atoms.symbols)
-                coords = list(atoms.get_positions())
-                occupancies = [1] * len(symbols)  # Default occupancies to 1
-                occ_info = atoms.info.get('occupancy')
-                kinds = atoms.arrays.get('spacegroup_kinds')
-
-                if occ_info is not None and kinds is not None:
-                    for i, kind in enumerate(kinds):
-                        occ_info_kind = occ_info.get(str(kind), {})
-                        symbol = symbols[i]
-                        if symbol not in occ_info_kind:
-                            raise ValueError(f'Occupancy info for "{symbol}" not found')
-                        occupancies[i] = occ_info_kind.get(symbol, 1)
-
-                atoms.set_pbc(True)
-
-                ionic_conductivity = np.log10(row['Ionic conductivity (S cm-1)'])
-                properties = {'ionic_conductivity': np.array([ionic_conductivity], dtype=np.float32)}
-                property_list.append(properties)
-                atoms_list.append(atoms)
-                ionic_conductivity_list.append(ionic_conductivity)
-
-            except Exception as e:
-                print(f'Failed to process CIF file for {idx}: {e}')
+            if row['CIF'].lower() != "no match":
+                try:
+                    atoms = read(cif_file_path,
+                                 index=config['cif_read_options']['index'],
+                                 store_tags=config['cif_read_options']['store_tags'],
+                                 primitive_cell=config['cif_read_options']['primitive_cell'],
+                                 subtrans_included=config['cif_read_options']['subtrans_included'],
+                                 fractional_occupancies=config['cif_read_options']['fractional_occupancies'],
+                                 reader=config['cif_read_options']['reader'])
                 
+                    symbols = list(atoms.symbols)
+                    coords = list(atoms.get_positions())
+                    occupancies = [1] * len(symbols)  # Default occupancies to 1
+                    occ_info = atoms.info.get('occupancy')
+                    kinds = atoms.arrays.get('spacegroup_kinds')
+                
+                    if occ_info is not None and kinds is not None:
+                        for i, kind in enumerate(kinds):
+                            occ_info_kind = occ_info.get(str(kind), {})
+                            symbol = symbols[i]
+                            if symbol not in occ_info_kind:
+                                raise ValueError(f'Occupancy info for "{symbol}" not found')
+                            occupancies[i] = occ_info_kind.get(symbol, 1)
+                
+                    atoms.set_pbc(True)
+                
+                    ionic_conductivity = np.log10(row['Ionic conductivity (S cm-1)'])
+                    properties = {'ionic_conductivity': np.array([ionic_conductivity], dtype=np.float32)}
+                    property_list.append(properties)
+                    atoms_list.append(atoms)
+                    ionic_conductivity_list.append(ionic_conductivity)
+                
+                except Exception as e:
+                    print(f'Failed to process CIF file for {idx}: {e}')
+
+        print(f"Processed {len(atoms_list)} CIF files")
         new_dataset = ASEAtomsData.create(
             db_path,
             distance_unit='Ang',
@@ -208,9 +216,11 @@ def prepare_data(db_path, train_data, config):
             trn.CastTo32()])
         new_dataset.add_systems(property_list, atoms_list)
 
+        print("Preprocessing properties...", end='', flush=True)
         ASEAtomsData.switch_getitem()
         props = [new_dataset[i] for i in range(len(new_dataset))]
-
+        print("Done")
+        
         pickle.dump(props, open("pre-transformed.pkl", 'wb'))
 
     else:
@@ -240,7 +250,7 @@ def setup_dataloader(props, config, split_file, db_path):
     
     return custom_data
     
-def train(props, split_file, db_path, config):
+def train(props, split_file, db_path, config, savedir):
     ####### step 4: Data Splitting and Loading
 
     print("Total number of datapoints: ", len(props))
@@ -254,17 +264,27 @@ def train(props, split_file, db_path, config):
     pairwise_distance = spk.atomistic.PairwiseDistances()
     radial_basis = GaussianRBF(n_rbf=20, cutoff=cutoff)
 
-    painn = spk.representation.PaiNN(
-        n_atom_basis=n_atom_basis,
-        n_interactions=n_interactions,
-        radial_basis=radial_basis,
-        cutoff_fn=CosineCutoff(cutoff)
-    )
-
+    if config["representation"].lower() == "painn":
+        rep = spk.representation.PaiNN(
+            n_atom_basis=n_atom_basis,
+            n_interactions=n_interactions,
+            radial_basis=radial_basis,
+            cutoff_fn=CosineCutoff(cutoff)
+        )
+    elif config["representation"].lower() == "schnet":
+        rep = spk.representation.SchNet(
+            n_atom_basis=n_atom_basis,
+            n_interactions=n_interactions,
+            radial_basis=radial_basis,
+            cutoff_fn=CosineCutoff(cutoff)
+        )
+    else:
+        raise ValueError("Unknown representation")
+        
     pred_ionic_conductivity = spk.atomistic.Atomwise(n_in=n_atom_basis, output_key='ionic_conductivity', aggregation_mode="avg")
 
-    nnpot_painn = spk.model.NeuralNetworkPotential(
-        representation=painn,
+    nnpot = spk.model.NeuralNetworkPotential(
+        representation=rep,
         input_modules=[pairwise_distance],
         output_modules=[pred_ionic_conductivity],
         postprocessors=[trn.CastTo64()]
@@ -281,14 +301,14 @@ def train(props, split_file, db_path, config):
         }
     )
 
-    task_painn = spk.task.AtomisticTask(
-        model=nnpot_painn,
+    task = spk.task.AtomisticTask(
+        model=nnpot,
         outputs=[output_ionic_conductivity],
         optimizer_cls=torch.optim.AdamW,
         optimizer_args={"lr": config["learning_rate"], "weight_decay": config["weight_decay"]}
     )
 
-    logger_painn = pl.loggers.TensorBoardLogger(save_dir=config["logger_painn_dir"])
+    logger = pl.loggers.TensorBoardLogger(save_dir=savedir)
 
     global metrics_df
     metrics_df = pd.DataFrame(columns=["Epoch", "Train Loss", "Val Loss", "Train MAE", "Val MAE"])
@@ -296,36 +316,36 @@ def train(props, split_file, db_path, config):
 
     callbacks = [
         spk.train.ModelCheckpoint(
-            model_path=config["model_checkpoint_path"],
+            model_path=savedir + "/best_model.pth",
             save_top_k=config["save_top_k"],
             monitor=config["monitor_metric"]
         ),
         MetricTracker(),
     ]
 
-    trainer_painn = pl.Trainer(
+    trainer = pl.Trainer(
         callbacks=callbacks,
-        logger=logger_painn,
-        default_root_dir=config["painn_root_dir"],
+        logger=logger,
+        default_root_dir=savedir,
         max_epochs=config["max_epochs"],
         deterministic=True,
         benchmark=False
     )
 
-    trainer_painn.fit(task_painn, datamodule=custom_data)
+    trainer.fit(task, datamodule=custom_data)
     
-    return trainer_painn, custom_data
+    return trainer, custom_data
 
-def crossval(props, db_path, train_data, config, rng, plot=False):
+def crossval(props, db_path, train_data, config, rng, savedir):
     
     shuffled_ids = rng.permutation(len(props))
     splits = np.array_split(shuffled_ids, config["num_folds"])
 
-    if plot:
-        plt.figure()
+    if config["extra_plots"]:
+        plt.figure(savedir)
         plt.xlabel('Epochs')
         plt.ylabel('Loss')
-        plt.title('Loss vs. Epochs - PaiNN')
+        plt.title('Loss vs. Epochs')
         plt.legend()
 
     train_maes = []
@@ -338,22 +358,34 @@ def crossval(props, db_path, train_data, config, rng, plot=False):
         split_file = config["db_dir"] + "/split.npz"
         
         np.savez(split_file, train_idx=train_idx, val_idx=val_idx, test_idx=[])
+
+        traindir = savedir + f"/fold_{i}"
+        Path(traindir).mkdir(parents=True, exist_ok=True)
         
-        trainer_painn, custom_data = train(props, split_file, db_path, config)
+        trainer, custom_data = train(props, split_file, db_path, config, traindir)
         
         # Final predictions
-        pred_train, target_train = get_pred_vs_targets(trainer_painn.model, custom_data.train_dataloader())
-        pred_val, target_val = get_pred_vs_targets(trainer_painn.model, custom_data.val_dataloader())
-
+        pred_train, target_train = get_pred_vs_targets(trainer.model, custom_data.train_dataloader())
+        pred_val, target_val = get_pred_vs_targets(trainer.model, custom_data.val_dataloader())
+        
         train_maes.append(np.mean(np.abs(pred_train - target_train)))
         val_maes.append(np.mean(np.abs(pred_val - target_val)))
         
-        if config["plot"]:
-            plt.plot(range(1, len(trainer_painn.model.train_losses) + 1), trainer_painn.model.train_losses,
-                     label='Train Loss - PaiNN', color='blue', linestyle='--')
-            plt.plot(range(1, len(trainer_painn.model.val_losses) + 1), trainer_painn.model.val_losses,
-                     label='Validation Loss - PaiNN', color='orange', linestyle='--')
+        if config["extra_plots"]:
+            plt.figure(savedir)
+            plt.plot(range(1, len(trainer.model.train_losses) + 1), trainer.model.train_losses,
+                     label='Train Loss', color='blue', linestyle='--')
+            plt.plot(range(1, len(trainer.model.val_losses) + 1), trainer.model.val_losses,
+                     label='Validation Loss', color='orange', linestyle='--')
             
+            plot_actual_vs_predicted(pred_train, target_train,
+                                     pred_val, target_val,
+                                     f"fold {i}", traindir + "/pred_vs_target.svg")
+
+    if config["extra_plots"]:
+        plt.figure(savedir)
+        plt.savefig(savedir + "/loss_vs_epochs.svg")
+
     print()
     print("--------------------------------------------------------")
     print(f"Results for {config['num_folds']}-fold cross-validation:")
@@ -388,6 +420,8 @@ def main():
 
     ####### step 3: Dataset Preprocessing
 
+    Path(config["out_dir"]).mkdir(parents=True, exist_ok=True)
+    
     warnings.filterwarnings('ignore')
 
     data = pd.read_csv(config["database_path"], index_col="ID")
@@ -395,37 +429,58 @@ def main():
     train_data = data[~data.index.isin(test.index)]
     test_data = data[data.index.isin(test.index)]
     
-    possible_configs = generate_configs(config)
+    possible_configs, param_grid = generate_configs(config)
     
     best_val_mae = np.inf
-    for tmp_config in possible_configs:
+    maes = []
+    for i, tmp_config in enumerate(possible_configs):
 
+        print()
+        print("--------------------------------------------------------")
+        print(f"Running crossval for configuration {i + 1}/{len(possible_configs)}")
+        print(param_grid.iloc[i])
+        
         db_path = tmp_config["db_dir"] + "/train.db"
         props = prepare_data(db_path, train_data, tmp_config)
         props = props[:config["n_train_data"]]
-    
-        val_mae, val_std = crossval(props, db_path, train_data, tmp_config, rng, plot=True)
 
+        savedir = config["out_dir"] + f"/config_{i}"
+        Path(savedir).mkdir(parents=True, exist_ok=True)
+        
+        val_mae, val_std = crossval(props, db_path, train_data, tmp_config, rng, savedir)
+
+        maes.append(val_mae)
+        yaml.dump(tmp_config, open(savedir + "/config.yaml", 'w'))
+        
         if val_mae < best_val_mae:
             best_val_mae = val_mae
             best_val_std = val_std
             best_config = tmp_config
-
-
+    maes = np.array(maes)
+            
     print()
-    print("--------------------------------------------------------")
+    print("========================================================")
     print("Best configuration found:")
     print(f"Validation MAE: {best_val_mae} +/- {best_val_std}")
-    
-    yaml.dump(best_config, open("best_config.yaml", 'w'))
+
+    plt.figure()
+    cm = plt.cm.get_cmap('winter')
+    for i, params in param_grid.iterrows():
+        plt.plot(params.index, params.to_numpy(), color=cm((maes[i] - maes.min()) / (maes.max() - maes.min())))
+    plt.xlabel('Configuration')
+    plt.ylabel('Hyper-parameter value')
+    plt.colorbar(plt.cm.ScalarMappable(cmap=cm), label='Validation MAE', ax=plt.gca())
+    plt.savefig(config["out_dir"] + '/sweep.svg')   
+
+    yaml.dump(best_config, open(config["out_dir"] + "/best_config.yaml", 'w'))
 
     print("Retraining model with best configuration...")
-    split_file = config["db_dir"] + "/split.npz"    
+    split_file = config["db_dir"] + "/split.npz"  
     np.savez(split_file, train_idx=np.arange(len(props)), val_idx=[], test_idx=[])
-    trainer_painn, custom_data = train(props, split_file, db_path, best_config)    
+    trainer, custom_data = train(props, split_file, db_path, best_config, config["out_dir"] + "/final_training") 
 
     # Final predictions
-    pred_train, target_train = get_pred_vs_targets(trainer_painn.model, custom_data.train_dataloader())
+    pred_train, target_train = get_pred_vs_targets(trainer.model, custom_data.train_dataloader())
 
     # --------------------------------------------------------------------------------  
     # Evaluate model on test set
@@ -436,15 +491,13 @@ def main():
     np.savez(split_file, train_idx=[], val_idx=[], test_idx=np.arange(len(test_props)))
     test_data = setup_dataloader(test_props, best_config, split_file, test_db_path)
 
-    pred_test, target_test = get_pred_vs_targets(trainer_painn.model, test_data.test_dataloader())
-    
-    if config["plot"]:
-        plt.savefig('loss_painn.png', dpi=config["high_dpi"])
+    pred_test, target_test = get_pred_vs_targets(trainer.model, test_data.test_dataloader())
 
-        plot_actual_vs_predicted(pred_train, target_train,
-                                 pred_test, target_test,
-                                 "Model", "target_vs_train.png")
+    plot_actual_vs_predicted(pred_train, target_train,
+                             pred_test, target_test,
+                             "final model vs test", config["out_dir"] + "/target_vs_train.svg")
 
+    if config["show"]:
         plt.show()
 
 if __name__ == '__main__':
