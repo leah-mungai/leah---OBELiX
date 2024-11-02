@@ -2,8 +2,12 @@ seed: 10
 
 # File and directory paths
 runtime_files:
-  - './split.npz'
-  - './splitting.lock'
+  - "./splitting.lock"
+  - "./test.db"
+  - "./pre-transformed.pkl"
+  - "./split.npz"
+  - "./test_split.npz"
+
   
 database_path: '../../../data/processed.csv'
 test_path: '../../../test_idx.csv'
@@ -15,9 +19,6 @@ show: True
 
 # Data processing parameters
 representation: "painn"
-file_prefix: 'train'
-remove_mean: true
-remove_atomrefs: false
 cutoff: [5]
 n_atom_basis: [20]
 n_interactions: 3

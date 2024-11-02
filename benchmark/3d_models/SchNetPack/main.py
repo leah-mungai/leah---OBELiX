@@ -134,7 +134,7 @@ def get_pred_vs_targets(model, dataloader):
     model.eval()
     with torch.no_grad():
         for batch in dataloader:
-            actual_ionic_conductivities.append(batch['ionic_conductivity'].cpu().numpy())
+            actual_ionic_conductivities.append(batch['ionic_conductivity_orig'].cpu().numpy())
             predicted_ionic_conductivities.append(model(batch)['ionic_conductivity'].cpu().detach().numpy())
     return np.concatenate(predicted_ionic_conductivities), np.concatenate(actual_ionic_conductivities)
 
@@ -167,7 +167,7 @@ def prepare_data(db_path, train_data, config):
 
         print("Reading CIFs...", end='', flush=True)
         for idx, row in train_data.iterrows():
-
+            
             cif_file_path = os.path.join(config["cif_file_dir"], f'{idx}.cif')  # Path from config.yam
 
             if row['CIF'].lower() != "no match":
@@ -197,7 +197,7 @@ def prepare_data(db_path, train_data, config):
                     atoms.set_pbc(True)
                 
                     ionic_conductivity = np.log10(row['Ionic conductivity (S cm-1)'])
-                    properties = {'ionic_conductivity': np.array([ionic_conductivity], dtype=np.float32)}
+                    properties = {'ionic_conductivity': np.array([ionic_conductivity], dtype=np.float32), 'ionic_conductivity_orig': np.array([ionic_conductivity], dtype=np.float32), "true_id": np.array([int(idx,36)])}
                     property_list.append(properties)
                     atoms_list.append(atoms)
                     ionic_conductivity_list.append(ionic_conductivity)
@@ -206,14 +206,16 @@ def prepare_data(db_path, train_data, config):
                     print(f'Failed to process CIF file for {idx}: {e}')
 
         print(f"Processed {len(atoms_list)} CIF files")
+
+        transforms = [trn.ASENeighborList(cutoff=config["cutoff"]),
+                      trn.RemoveOffsets("ionic_conductivity", remove_mean=True, is_extensive=False, property_mean=torch.mean(torch.tensor(ionic_conductivity_list, dtype=torch.float32))), trn.CastTo32()]
+        
         new_dataset = ASEAtomsData.create(
             db_path,
             distance_unit='Ang',
-            property_unit_dict={'ionic_conductivity': 'S/cm'},
-            transforms=[
-            trn.ASENeighborList(cutoff=config["cutoff"]),
-            trn.RemoveOffsets("ionic_conductivity", remove_mean=config["remove_mean"], remove_atomrefs=config["remove_atomrefs"], is_extensive=False, property_mean=torch.tensor([2.5])),
-            trn.CastTo32()])
+            property_unit_dict={'ionic_conductivity': 'S/cm', 'ionic_conductivity_orig': 'S/cm', 'true_id': ''},
+            transforms=transforms)
+
         new_dataset.add_systems(property_list, atoms_list)
 
         print("Preprocessing properties...", end='', flush=True)
@@ -287,8 +289,7 @@ def train(props, split_file, db_path, config, savedir):
         representation=rep,
         input_modules=[pairwise_distance],
         output_modules=[pred_ionic_conductivity],
-        postprocessors=[trn.CastTo64()]
-    )
+        postprocessors=[trn.CastTo32(), trn.AddOffsets("ionic_conductivity", add_mean=True, is_extensive=False, property_mean=torch.mean(torch.tensor([prop['ionic_conductivity_orig'] for prop in props], dtype=torch.float32)))])
 
     ####### step 7: Model Training and Logging
 
@@ -487,11 +488,19 @@ def main():
     print("Evaluating model on test set...")
     test_db_path = config["db_dir"] + "/test.db"
     test_props = prepare_data(test_db_path, test_data, best_config)
-    split_file = config["db_dir"] + "/split.npz"    
+    split_file = config["db_dir"] + "/test_split.npz"    
     np.savez(split_file, train_idx=[], val_idx=[], test_idx=np.arange(len(test_props)))
-    test_data = setup_dataloader(test_props, best_config, split_file, test_db_path)
+    test_dataloader = setup_dataloader(test_props, best_config, split_file, test_db_path)
 
-    pred_test, target_test = get_pred_vs_targets(trainer.model, test_data.test_dataloader())
+
+    # Making sure there is no leakage
+    lookup = {int(i,36):i for i in data.index}
+    ids = [lookup[int(p["true_id"])] for p in test_props]
+    if any([i not in test_data.index for i in ids]):
+        breakpoint()
+        raise ValueError("Some test IDs not found in test data")
+    
+    pred_test, target_test = get_pred_vs_targets(trainer.model, test_dataloader.test_dataloader())
 
     plot_actual_vs_predicted(pred_train, target_train,
                              pred_test, target_test,
