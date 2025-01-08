@@ -147,7 +147,7 @@ def hyperparameter_search(args, dataset, normalizer):
         'n_h': [1, 2, 3, 4],
         'lr': [1e-2, 1e-3, 5e-4, 1e-4],            
         'batch_size': [35, 50, 70, 100],          
-        'epochs': [35, 50, 70, 100]                 
+        'epochs': [35, 50, 70, 100]        
     }
 
     all_combinations = [dict(zip(hyperparameter_space, v)) for v in itertools.product(*hyperparameter_space.values())]
@@ -158,12 +158,18 @@ def hyperparameter_search(args, dataset, normalizer):
     best_fold_maes = None
     best_fold_indices = None
 
+
+    worst_case_hyperparams = None
+    worst_case_val_mae = float('-inf')
+    worst_case_fold_indices = None
+
+
     # Loop through each hyperparameter combination
     for idx, hyperparams in enumerate(selected_combinations):
         print(f"Testing combination {idx + 1}/{args.num_cases}: {hyperparams}")
         
         # Perform cross-validation and calculate average validation MAE
-        train_mae_per_fold, avg_train_mae, val_mae_per_fold, avg_val_mae, fold_indices = cross_validate(args, dataset, hyperparams, normalizer, case_number=idx + 1)
+        train_mae_per_fold, avg_train_mae, val_mae_per_fold, avg_val_mae, fold_indices,  worst_fold_index = cross_validate(args, dataset, hyperparams, normalizer, case_number=idx + 1)
 
         if avg_val_mae < best_val_mae:
             best_val_mae = avg_val_mae
@@ -171,7 +177,13 @@ def hyperparameter_search(args, dataset, normalizer):
             best_fold_maes = val_mae_per_fold
             best_fold_indices = fold_indices
 
-    return best_hyperparams, best_val_mae, best_fold_maes, best_fold_indices
+
+        if max(val_mae_per_fold) > worst_case_val_mae:
+            worst_case_val_mae = max(val_mae_per_fold)
+            worst_case_hyperparams = hyperparams
+            worst_case_fold_indices = fold_indices
+
+    return best_hyperparams, best_val_mae, best_fold_maes, best_fold_indices, worst_case_hyperparams,worst_case_val_mae, worst_case_fold_indices
 
 
 def cross_validate(args, dataset, hyperparams, normalizer, case_number):
@@ -254,7 +266,6 @@ def cross_validate(args, dataset, hyperparams, normalizer, case_number):
         train_mae_per_fold.append(train_mae_per_epoch[-1])
         val_mae_per_fold.append(val_mae_per_epoch[-1])
 
-
         # Generate Predicted vs Actual plot for the fold
         plot_pred_vs_actual(
             train_preds=train_preds,
@@ -281,6 +292,7 @@ def cross_validate(args, dataset, hyperparams, normalizer, case_number):
         plt.savefig(f"mae_vs_epochs_case_{case_number}_fold_{fold + 1}.png", dpi=300)
         plt.close()
 
+    worst_fold_index = np.argmax(val_mae_per_fold)
 
     # Compute the average and standard deviation across folds
     avg_train_mae = np.mean(train_mae_per_fold)
@@ -324,7 +336,7 @@ def cross_validate(args, dataset, hyperparams, normalizer, case_number):
     print(f"Avg Train MAE: {avg_train_mae:.4f} ± {std_train_mae:.4f}")
     print(f"Avg Validation MAE: {avg_val_mae:.4f} ± {std_val_mae:.4f}")
 
-    return train_mae_per_fold, avg_train_mae, val_mae_per_fold, avg_val_mae, fold_indices
+    return train_mae_per_fold, avg_train_mae, val_mae_per_fold, avg_val_mae, fold_indices, worst_fold_index
 
 # Model builder
 def build_model(hyperparams, dataset):
@@ -517,20 +529,22 @@ def main():
     normalizer = Normalizer(torch.tensor([sample[1] for sample in dataset]))
 
     # Hyperparameter search
-    best_hyperparams, best_val_mae, best_fold_maes, best_fold_indices = hyperparameter_search(args, dataset, normalizer)
+    best_hyperparams, best_val_mae, best_fold_maes, best_fold_indices, worst_case_hyperparams, worst_case_val_mae, worst_case_fold_indices = hyperparameter_search(args, dataset, normalizer)
     print(f"Best hyperparameters: {best_hyperparams}")
     print(f"Validation MAE (Best Case): {best_val_mae:.4f}")
 
-    # Determine the worst fold for the best hyperparameters
-    worst_fold_index = np.argmax(best_fold_maes)
-    train_idx, val_idx = best_fold_indices[worst_fold_index]
-    print(f"Worst Validation MAE: {best_fold_maes[worst_fold_index]:.4f}")
+    print(f"Worst Hyperparameters: {worst_case_hyperparams}")
+    print(f"Worst Validation MAE: {worst_case_val_mae:.4f}")
 
-    # Train on the worst fold's training data and evaluate on test set
-    worst_fold_train_data = Subset(dataset, train_idx)
-    model = train_best_model(args, best_hyperparams, worst_fold_train_data, normalizer)
-    worst_test_mae = evaluate_on_test_set(model, test_dataset, normalizer, best_hyperparams['batch_size'], worst_fold=True, pretrained_file=None)
-    print(f"Test MAE (Worst Fold): {worst_test_mae:.4f}")
+
+    # Train and evaluate on the worst fold's parameters
+    print("\nTraining with Worst Hyperparameters:")
+    worst_fold_index = np.argmax(best_fold_maes)  
+    worst_train_idx, _ = worst_case_fold_indices[worst_fold_index]  
+    worst_train_data = Subset(dataset, worst_train_idx)
+    model = train_best_model(args, worst_case_hyperparams, worst_train_data, normalizer)
+    test_mae_worst = evaluate_on_test_set(model, test_dataset, normalizer, worst_case_hyperparams['batch_size'], worst_fold=True, pretrained_file=None)
+    print(f"Test MAE (Worst Hyperparameters): {test_mae_worst:.4f}")
 
     # Train on the full dataset and evaluate on test set
     model = train_best_model(args, best_hyperparams, dataset, normalizer)
@@ -541,7 +555,7 @@ def main():
 
     for pretrained_file in pretrained_files:
         print(f"\nEvaluating pretraining with file: {pretrained_file}")
-        model = train_best_model(args, best_hyperparams, worst_fold_train_data, normalizer, pretrained_file=pretrained_file)
+        model = train_best_model(args, best_hyperparams, dataset, normalizer, pretrained_file=pretrained_file)
         pretrained_test_mae = evaluate_on_test_set(model, test_dataset, normalizer, best_hyperparams['batch_size'], worst_fold=False, pretrained_file=pretrained_file)
         print(f"Test MAE with {pretrained_file}: {pretrained_test_mae:.4f}")
 

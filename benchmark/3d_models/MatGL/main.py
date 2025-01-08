@@ -283,8 +283,10 @@ def run_cross_validation(config, model_type, max_epochs, lr, batch_size, train_d
     print(f"Average Train MAE: {avg_mae_train:.4f} ± {avg_mae_train_std:.4f}")
     print(f"Average Validation MAE: {avg_mae_val:.4f} ± {avg_mae_val_std:.4f}")
 
+    max_val_mae_fold = max(mae_val_folds)
 
-    return avg_mae_val, mae_val_folds
+
+    return avg_mae_val, mae_val_folds, max_val_mae_fold
 
 
 # Search for the best hyperparameter combination
@@ -326,6 +328,10 @@ def run_hyperparameter_search(config, model_type, train_dataset, train_structure
     best_folds_mae = None
     best_hyperparameters = None
     all_mae_values = []
+
+    worst_case_min_max_val_mae = float('inf')
+    worst_case_hyperparameters = None
+    worst_case_folds_mae = None
 
     random_hyperparameters = random.sample(list(hyperparameters), config['hyperparameters']['num_cases'])
 
@@ -370,7 +376,7 @@ def run_hyperparameter_search(config, model_type, train_dataset, train_structure
             config['so3net']['cutoff'] = cutoff 
             config['so3net']['nlayers_readout'] = nlayers_readout
 
-        avg_val_mae, folds_val_mae = run_cross_validation(config, model_type, max_epochs, lr, batch_size, train_dataset, train_structures, case_number=case_num)
+        avg_val_mae, folds_val_mae, max_val_mae_fold = run_cross_validation(config, model_type, max_epochs, lr, batch_size, train_dataset, train_structures, case_number=case_num)
 
         # Add hyperparameters and results to all_mae_values
         all_mae_values.append({
@@ -414,6 +420,28 @@ def run_hyperparameter_search(config, model_type, train_dataset, train_structure
                 'max_epochs': max_epochs,
             }
 
+
+        if max_val_mae_fold < worst_case_min_max_val_mae:
+            worst_case_min_max_val_mae = max_val_mae_fold
+            worst_case_folds_mae = folds_val_mae
+            worst_case_hyperparameters = {
+                'is_intensive': is_intensive,
+                'readout_type': readout_type,
+                'nblocks': nblocks,
+                'dim_node_embedding': dim_node_embedding,
+                'dim_edge_embedding': dim_edge_embedding if model_type == "m3gnet" else None,
+                'units': units,
+                'threebody_cutoff': threebody_cutoff if model_type == "m3gnet" else None,
+                'cutoff': cutoff,
+                'target_property': target_property if model_type == "so3net" else None,
+                'nmax': nmax if model_type == "so3net" else None,
+                'lmax': lmax if model_type == "so3net" else None,
+                'nlayers_readout': nlayers_readout if model_type == "so3net" else None,
+                'batch_size': batch_size,
+                'lr': lr,
+                'max_epochs': max_epochs,
+            }
+
         # Increment case number
         case_num += 1
 
@@ -423,7 +451,11 @@ def run_hyperparameter_search(config, model_type, train_dataset, train_structure
     print(f"Best Hyperparameters for {model_type}: {best_hyperparameters}")
     print(f"Lowest Validation MAE: {best_val_mae:.4f}")
 
-    return best_hyperparameters, best_val_mae, best_folds_mae
+    print(f"Hyperparameters for the worst case: {worst_case_hyperparameters}")
+    print(f"Worst Validation MAE: {worst_case_min_max_val_mae:.4f}")
+
+
+    return best_hyperparameters, best_val_mae, best_folds_mae, worst_case_hyperparameters, worst_case_min_max_val_mae, worst_case_folds_mae
 
 
 
@@ -682,7 +714,7 @@ if __name__ == "__main__":
     model_type = sys.argv[1] if len(sys.argv) > 1 else "m3gnet"
 
     # Run hyperparameter search to get the best hyperparameters and validation MAE
-    best_hyperparameters, best_val_mae, best_folds_mae = run_hyperparameter_search(config, model_type, train_dataset, train_structures)
+    best_hyperparameters, best_val_mae, best_folds_mae, worst_case_hyperparameters, worst_case_min_max_val_mae, worst_case_folds_mae = run_hyperparameter_search(config, model_type, train_dataset, train_structures)
 
     # Retrain the model on the full dataset with the best hyperparameters
     lit_module = retrain_on_full_dataset(
@@ -697,23 +729,17 @@ if __name__ == "__main__":
     print(f"Test MAE: {test_mae:.4f}")
     print(f"Validation MAE: {best_val_mae:.4f} (best hyperparameters)")
 
-    # Evaluate test set for worst fold case
-    worst_fold_index = np.argmax(best_folds_mae)  
-    worst_fold_mae = best_folds_mae[worst_fold_index]
 
-    print(f"Worst Fold Validation MAE: {worst_fold_mae:.4f}")
-
-    worst_fold_train_indices, worst_fold_val_indices = list(KFold(config['split']['k_folds']).split(train_dataset))[worst_fold_index]
-    worst_fold_train_data = Subset(train_dataset, worst_fold_train_indices)
     lit_module_worst_fold = retrain_on_full_dataset(
         config=config,
         model_type=model_type,
-        best_hyperparameters=best_hyperparameters,
-        train_dataset=worst_fold_train_data,
+        best_hyperparameters=worst_case_hyperparameters,  
+        train_dataset=Subset(train_dataset, list(KFold(config['split']['k_folds']).split(train_dataset))[np.argmax(worst_case_folds_mae)][0]),  
         train_structures=train_structures
     )
+
     # Evaluate test set for worst fold retraining
-    test_mae_worst = run_test_evaluation(lit_module_worst_fold, test_dataset, config, best_hyperparameters, test_ids, file_suffix="worst")
+    test_mae_worst = run_test_evaluation(lit_module_worst_fold, test_dataset, config, worst_case_hyperparameters, test_ids, file_suffix="worst")
     print(f"Test MAE (worst fold): {test_mae_worst:.4f}")
 
     if config['pretraining']['use_pretrained']:
@@ -732,6 +758,22 @@ if __name__ == "__main__":
             print(f"Test MAE after fine-tuning: {test_mae:.4f}")
         else:
             print("Pretraining skipped; test MAE after fine-tuning will not be calculated.")
+
+        print("Using pretrained model with worst-case hyperparameters...")
+        lit_module_worst_pretrained = run_finetuning_with_hyperparameters(
+            config=config,
+            model_type=model_type,
+            train_dataset=train_dataset,
+            train_structures=train_structures,
+            best_hyperparameters=worst_case_hyperparameters,
+            model_name=config['pretraining']['model_name']
+        )
+
+        if lit_module_worst_pretrained:
+            test_mae_worst_pretrained = run_test_evaluation(lit_module_worst_pretrained, test_dataset, config, worst_case_hyperparameters, test_ids, file_suffix="finetuned_worst")
+            print(f"Test MAE after fine-tuning (worst fold): {test_mae_worst_pretrained:.4f}")
+        else:
+            print("Pretraining skipped for worst hyperparameters; test MAE after fine-tuning will not be calculated.")
     else:
         print("Pretraining not enabled in configuration.")
 
