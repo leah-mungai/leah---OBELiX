@@ -289,6 +289,61 @@ def run_cross_validation(config, model_type, max_epochs, lr, batch_size, train_d
     return avg_mae_val, mae_val_folds, max_val_mae_fold
 
 
+def fine_tune_pretrained_best_case(config, model_type, train_dataset, train_structures, best_hyperparameters, model_name):
+    """Fine-tune the pretrained model using the best hyperparameters and recompute the average validation MAE."""
+    kf = KFold(n_splits=config['split']['k_folds'], shuffle=config['split']['shuffle'], random_state=config['split']['random_state'])
+    val_mae_folds = []
+
+    # Iterate through each fold
+    for fold, (train_idx, val_idx) in enumerate(kf.split(train_dataset), start=1):
+        print(f"Fine-tuning Pretrained Model for Fold {fold}/{config['split']['k_folds']}")
+
+        # Create train and validation subsets
+        train_data = Subset(train_dataset, train_idx)
+        val_data = Subset(train_dataset, val_idx)
+
+        # DataLoaders
+        collate_fn = partial(collate_fn_graph, include_line_graph=config['graph']['include_line_graph'])
+        train_loader = DataLoader(dataset=train_data, collate_fn=collate_fn, batch_size=best_hyperparameters['batch_size'], num_workers=config['split']['num_workers'])
+        val_loader = DataLoader(dataset=val_data, collate_fn=collate_fn, batch_size=best_hyperparameters['batch_size'], num_workers=config['split']['num_workers'])
+
+        # Load pretrained model
+        model, _ = load_pretrained_model(model_name, model_type, config)
+        if model is None:
+            print(f"Skipping Fold {fold}: Pretrained model could not be loaded.")
+            continue
+
+        # Fine-tune the model
+        lit_module = ModelLightningModule(
+            model=model,
+            lr=best_hyperparameters['lr'],
+            include_line_graph=config['graph']['include_line_graph']
+        )
+        logger = CSVLogger(save_dir=config['logger']['save_dir'], name=f"finetuning_fold_{fold}")
+        trainer = pl.Trainer(max_epochs=best_hyperparameters['max_epochs'], accelerator=config['training']['accelerator'], logger=logger)
+        trainer.fit(model=lit_module, train_dataloaders=train_loader)
+
+        # Evaluate on validation set
+        val_preds, val_actuals = [], []
+        for batch in val_loader:
+            graph, lat, line_graph, state_attr, labels = batch
+            outputs = lit_module(g=graph, lat=lat, l_g=line_graph, state_attr=state_attr)
+            val_preds.extend(outputs.detach().cpu().numpy())
+            val_actuals.extend(labels.detach().cpu().numpy())
+
+        # Calculate MAE for this fold
+        val_mae_fold = mean_absolute_error(val_actuals, val_preds)
+        val_mae_folds.append(val_mae_fold)
+        print(f"Fold {fold} Validation MAE after Fine-Tuning: {val_mae_fold:.4f}")
+
+    # Calculate the average and std MAE across folds
+    avg_val_mae = np.mean(val_mae_folds)
+    std_val_mae = np.std(val_mae_folds)
+
+    print(f"Validation MAE After Fine-Tuning (Avg): {avg_val_mae:.4f} ± {std_val_mae:.4f}")
+    return avg_val_mae, std_val_mae, lit_module
+
+
 # Search for the best hyperparameter combination
 def run_hyperparameter_search(config, model_type, train_dataset, train_structures):
     """Search for the best hyperparameter combination and return the best hyperparameters and validation MAE."""
@@ -742,9 +797,10 @@ if __name__ == "__main__":
     test_mae_worst = run_test_evaluation(lit_module_worst_fold, test_dataset, config, worst_case_hyperparameters, test_ids, file_suffix="worst")
     print(f"Test MAE (worst fold): {test_mae_worst:.4f}")
 
+
     if config['pretraining']['use_pretrained']:
-        print("Using pretrained model with best hyperparameters...")
-        lit_module = run_finetuning_with_hyperparameters(
+        print("Fine-tuning pretrained model for the best case...")
+        avg_val_mae, std_val_mae, lit_module = fine_tune_pretrained_best_case(
             config=config,
             model_type=model_type,
             train_dataset=train_dataset,
@@ -752,13 +808,17 @@ if __name__ == "__main__":
             best_hyperparameters=best_hyperparameters,
             model_name=config['pretraining']['model_name']
         )
+        print(f"Validation MAE After Fine-Tuning (Best Case): {avg_val_mae:.4f} ± {std_val_mae:.4f}")
 
-        if lit_module:
-            test_mae = run_test_evaluation(lit_module, test_dataset, config, best_hyperparameters, test_ids, file_suffix="finetuned")
-            print(f"Test MAE after fine-tuning: {test_mae:.4f}")
-        else:
-            print("Pretraining skipped; test MAE after fine-tuning will not be calculated.")
+            # Evaluate the fine-tuned model on the test dataset
+        test_mae = run_test_evaluation(lit_module, test_dataset, config, best_hyperparameters, test_ids, file_suffix="finetuned")
+        print(f"Test MAE after fine-tuning: {test_mae:.4f}")
 
+    else:
+        print("Pretraining not enabled in configuration.")
+
+
+    if config['pretraining']['use_pretrained']:
         print("Using pretrained model with worst-case hyperparameters...")
         lit_module_worst_pretrained = run_finetuning_with_hyperparameters(
             config=config,
@@ -776,5 +836,4 @@ if __name__ == "__main__":
             print("Pretraining skipped for worst hyperparameters; test MAE after fine-tuning will not be calculated.")
     else:
         print("Pretraining not enabled in configuration.")
-
 
