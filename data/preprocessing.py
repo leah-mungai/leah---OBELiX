@@ -15,8 +15,8 @@ def read_options():
     return args
 
 def is_same_formula(formula_string1, formula_string2):
-    f1 = re.findall("([A-Za-z]{1,2})([0-9\.]*)\s*", formula_string1)
-    f2 = re.findall("([A-Za-z]{1,2})([0-9\.]*)\s*", formula_string2)
+    f1 = re.findall(r"([A-Za-z]{1,2})([0-9\.]*)\s*", formula_string1)
+    f2 = re.findall(r"([A-Za-z]{1,2})([0-9\.]*)\s*", formula_string2)
     if len(f1) != len(f2):
         return False
     for elem, count in f1:
@@ -29,7 +29,7 @@ def remove_overlines(input_str):
     out_str =  u"".join([c for c in nfkd_form if not unicodedata.combining(c)])
     return out_str.replace("−", "-")
     
-def get_paper_from_laskowski(material, cond, laskowski_data, doi_lookup_table):
+def get_paper_from_laskowski(material, cond, laskowski_data, doi_lookup_table, return_idx=False):
     paper_dois = []
     potential_matches = []
     for j, paper_material in enumerate(laskowski_data[:,0]):
@@ -73,24 +73,39 @@ def get_paper_from_laskowski(material, cond, laskowski_data, doi_lookup_table):
             if cond == cond_mat:
                 if paper_doi == "Missing paper info (Laskowski)":
                     print("WARNING: Found material but paper info is missing:", material)
-                    
-                paper_dois.extend([doi_lookup_table[doi] for doi in re.findall("[0-9]+", paper_doi)])
+
+                if return_idx:
+                    paper_dois.extend(re.findall(r"[0-9]+", paper_doi))
+                else:
+                    paper_dois.extend([doi_lookup_table[doi] for doi in re.findall(r"[0-9]+", paper_doi)])
             else:
                 if paper_doi == "Missing paper info (Laskowski)":
-                    potential_matches.append(([paper_doi], cond_mat))
+                    if return_idx:
+                        potential_matches.append(([""], cond_mat))
+                    else:
+                        potential_matches.append(([paper_doi], cond_mat))
                 else:
-                    potential_matches.append(([doi_lookup_table[doi] for doi in re.findall("[0-9]+", paper_doi)], cond_mat))
+                    if return_idx:
+                        potential_matches.append((re.findall(r"[0-9]+", paper_doi), cond_mat))
+                    else:
+                        potential_matches.append(([doi_lookup_table[doi] for doi in re.findall(r"[0-9]+", paper_doi)], cond_mat))
     return paper_dois, potential_matches
 
-def get_paper_from_liion(material, cond, liion_data):
+def get_paper_from_liion(material, cond, liion_data, return_idx=False):
     paper_dois = []
     potential_matches = []
     for j, liion_material in enumerate(liion_data[:,1]):
         if (material == liion_material or is_same_formula(material, liion_material)):
-            if cond == float(liion_data[j, 4]):
-                paper_dois.append(liion_data[j, 2])
+            if return_idx:
+                 if cond == float(liion_data[j, 4]):
+                     paper_dois.append(str(j))
+                 else:
+                     potential_matches.append(([str(j)], float(liion_data[j, 4])))
             else:
-                potential_matches.append(([liion_data[j, 2]], float(liion_data[j, 4])))
+                 if cond == float(liion_data[j, 4]):
+                     paper_dois.append(liion_data[j, 2])
+                 else:
+                     potential_matches.append(([liion_data[str(j), 2]], float(liion_data[j, 4])))
 
     return paper_dois, potential_matches
 

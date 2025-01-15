@@ -25,8 +25,6 @@ def add_datasets_labels(data):
     data["ICSD used"] = None
     
     for i, row in data.iterrows():
-    
-        print(i)
         
         formula = row["Reduced Composition"]
     
@@ -38,25 +36,26 @@ def add_datasets_labels(data):
         li_matches, li_potential_matches = get_paper_from_liion(row["Reduced Composition"],
                                                                 row["Ionic conductivity (S cm-1)"],
                                                                 liion_data, return_idx=True)
+
         
         # From comments
-        ref_id = re.findall("D([1,2])\s*-\s*([0-9]+)", str(row["Ref"]))
-        ref_ICSD = re.findall("([0-9]+)-ICSD", str(row["Cif ref_1"]))
+        ref_id = re.findall(r"D([1,2])\s*-\s*([0-9]+)", str(row["Ref"]))
+        ref_ICSD = re.findall(r"([0-9]+)-ICSD", str(row["Cif ref_1"]))
         # From cifs
         if row["Cif ID"] == "done":
                 
             filename = "new_cifs/cifs/" + i + ".cif"
             with open(filename,"r") as f:
                 s = f.read()
-            cif_ICSD = re.findall("_database_code_ICSD\s*([0-9]+)", s)
+            cif_ICSD = re.findall(r"_database_code_ICSD\s*([0-9]+)", s)
             
             # Actually used the cif
     
             filename = "cifs/" + i + ".cif"
             with open(filename,"r") as f:
                 s = f.read()
-            true_cif_ICSD = re.findall("_database_code_ICSD\s*([0-9]+)", s)
-            modified = re.findall("[Cc]orrected [Mm]anually", s)
+            true_cif_ICSD = re.findall(r"_database_code_ICSD\s*([0-9]+)", s)
+            modified = re.findall(r"[Cc]orrected [Mm]anually", s)
     
         else:
             cif_ICSD = []
@@ -78,10 +77,14 @@ def add_datasets_labels(data):
                 lask_id = la_matches[0]
         else:
             if len(ref_id) != 0 and int(ref_id[0][0]) == 2:
-                for match in la_potential_matches:
-                    if ref_id[0][1] in match[0]:
-                        lask_id = match[0]
-                        break
+                for pot_match in la_potential_matches:
+                    for match in pot_match[0]:
+                        if ref_id[0][1] in match:
+                            lask_id = match
+                            break
+                    else:
+                        continue
+                    break
                 else:
                     print(f"Laskowski: No match for {i} but reference was given. Using reference.")
                     lask_id = ref_id[0][1]
@@ -89,8 +92,7 @@ def add_datasets_labels(data):
                 if len(la_potential_matches) > 0:
                     print(f"Laskowski: No match for {i} and no reference given but potential matches were found.")
                 lask_id = None
-    
-    
+                
         # LiIon
     
         if len(li_matches) >= 1:
@@ -134,7 +136,7 @@ def add_datasets_labels(data):
     
     
         # ICSD used
-    
+        
         ICSD_used = len(true_cif_ICSD) == 1 and len(modified) == 0
         
         data.loc[i, "ICSD ID"] = ICSD_id
@@ -166,6 +168,11 @@ if __name__ == "__main__":
     venn3((ICSD_entries, Laskowski_entries, Liion_entries), ("ICSD", "Laskowski", "Liion"))
 
     print("Number of ICSD files used as is:", len(ICSD_used))
+    print("Number of ICSD files:", len(ICSD_entries))
     print("Number of files not in any dataset:", len(data) - len(ICSD_entries | Laskowski_entries | Liion_entries))
+
+    ICSD_not_used = ICSD_entries - ICSD_used
+
+    data.loc[list(ICSD_not_used)].to_excel("ICSD_not_used.xlsx")
     
     plt.show()
