@@ -155,9 +155,7 @@ if __name__ == "__main__":
     
     data = add_datasets_labels(data)
 
-    data.to_excel("raw_labeled.xlsx")
-
-    #data = pd.read_excel("raw_labeled.xlsx", index_col="ID")
+    data.drop(columns=["ICSD used"]).to_excel("raw.xlsx")
     
     ICSD_entries = set(data.index[data['ICSD ID'].notna()])
     Laskowski_entries = set(data.index[data['Laskowski ID'].notna()])
@@ -170,9 +168,5 @@ if __name__ == "__main__":
     print("Number of ICSD files used as is:", len(ICSD_used))
     print("Number of ICSD files:", len(ICSD_entries))
     print("Number of files not in any dataset:", len(data) - len(ICSD_entries | Laskowski_entries | Liion_entries))
-
-    ICSD_not_used = ICSD_entries - ICSD_used
-
-    data.loc[list(ICSD_not_used)].to_excel("ICSD_not_used.xlsx")
     
     plt.show()
