@@ -124,7 +124,7 @@ def close_composition(comp1, comp2, Z, tol):
 if __name__ == "__main__":
     
     data = pd.read_excel("raw.xlsx", index_col="ID")
-    folder = "new_cifs/cifs/"
+    folder = "cifs/"
     problems = dict()
     for i, row in data.iterrows():
     
