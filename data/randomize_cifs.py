@@ -3,9 +3,12 @@ from pymatgen.core import Structure
 from pymatgen.io.cif import CifFile
 import numpy as np
 from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
+import shutil
+from sys import argv
 
 noise_level = 0.01
 neighbor_cutoff = 1
+max_attempts = 2
 
 input_folder = "anon_cifs/"
 output_folder = "randomized_cifs/"
@@ -24,20 +27,6 @@ def symmetrize(structure, new_structure, neighbor_cutoff=neighbor_cutoff):
         new_coords = np.array(coords).mean(axis=0)
         new_structure[indices[0]].coords = new_coords
         new_structure.remove_sites(indices[1:])
-
-    # indices = []
-    # for j, neighbors in enumerate(new_structure.get_all_neighbors(1)):
-    #     if j in indices:
-    #         continue
-    #     species_dict = new_structure[j].species.as_dict()
-    #     for n in neighbors:
-    #         indices.append(n.index)
-    #         species_dict.update(n.species.as_dict())
-
-    #      if sum(species_dict.values()) > 1:
-    #          print("WARNING: sum of species > 1", species_dict)
-             
-    # new_structure.remove_sites(indices)
             
     return new_structure
 
@@ -80,22 +69,25 @@ def add_random_noise(filename, rng):
             
 if __name__ == "__main__":
 
-    rng = np.random.default_rng(seed=59603)
+    rng = np.random.default_rng(seed=int(argv[1]))
     
-    data = pd.read_excel("raw_labeled.xlsx", index_col="ID")
+    data = pd.read_excel("raw.xlsx", index_col="ID")
     problems = []
     for i, row in data.iterrows():
 
         filename = input_folder + i + ".cif"
         
-        if row["Cif ID"] != "done" and np.isfinite(row["ICSD ID"]):
+        if row["Cif ID"] == "done" and not np.isfinite(row["ICSD ID"]):
             shutil.copyfile(filename, output_folder + i + ".cif")
+            continue
+        elif row["Cif ID"] != "done":
+            continue
 
         print("Processing", i)
 
         structure = Structure.from_file(filename)
         
-        for attempt in range(1):
+        for attempt in range(max_attempts):
         
             new_structure = add_random_noise(filename, rng)
 
@@ -106,11 +98,10 @@ if __name__ == "__main__":
                 break
             
         else:
+            new_structure.to(output_folder + i + "_problem.cif", symprec=2e-3)
             print(f"PROBLEM: {i}")
             problems.append(i)
             continue
 
     print(f"There were {len(problems)} problems.")
     print(problems)
-        # TODO: 1. new_structure can be larger if two species are on the same site, maybe move identical coords by the same amount?
-        # 2. Large structure may have atoms labeled as different but are acutually in the same orbit? 
