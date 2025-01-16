@@ -8,7 +8,11 @@ from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 import numpy as np
 import warnings
 
+symprec = 2e-3
+make_np = True
+
 def remove_partial_occ(structure):
+    structure = structure.copy()
     to_remove = []
     for i, site in enumerate(structure):
         for k,v in site.species.as_dict().items():
@@ -96,16 +100,26 @@ def process(i, folder, make_np=False):
         atoms = ase_read(folder + i + ".cif", fractional_occupancies=True, format="cif")
 
     atoms = rescale_occs(atoms, tol=1.1e-3)
-        
+          
     structure = atoms_to_structure(atoms)
     
-    structure.to("anon_cifs/" + i + ".cif", symprec=2e-3)
+    structure.to("anon_cifs/" + i + ".cif", symprec=symprec)
 
     if make_np:
         np_structure = remove_partial_occ(structure)
-        np_structure.to("np_cifs/" + i + ".cif", symprec=2e-3)
+        np_structure.to("np_cifs/" + i + ".cif", symprec=symprec)
 
-    return atoms
+    return atoms, structure
+
+def close_composition(comp1, comp2, Z, tol):
+    if len(comp1) != len(comp2):
+        return False
+    for k in comp1.keys():
+        if k not in comp2.keys():
+            return False
+        if abs(comp1[k]/Z - comp2[k]/Z) > tol:
+            return False
+    return True
 
 if __name__ == "__main__":
     
@@ -120,7 +134,7 @@ if __name__ == "__main__":
         print("Processing", i)
 
         try:
-            atoms = process(i, folder, make_np=True)
+            atoms, structure = process(i, folder, make_np=make_np)
         except Exception as e:
             print("PROBELM:", e)
             problems[i] = str(e)
@@ -163,8 +177,44 @@ if __name__ == "__main__":
             else:
                 problems[i] = "Different occupancies"
                 continue
+
+        if row["close match"] == "Yes":
+            tol = 1
+        else:
+            tol = 0.5
+            
+        if SpacegroupAnalyzer(structure, symprec=symprec).get_space_group_number() != row["Space group #"]:
+
+            if SpacegroupAnalyzer(structure, symprec=symprec*2).get_space_group_number() != row["Space group #"]:
+                structure.to("anon_cifs/" + i + ".cif", symprec=symprec*2)
+
+                if make_np:
+                    np_structure = remove_partial_occ(structure)
+                    np_structure.to("np_cifs/" + i + ".cif", symprec=symprec*2)
+
+            else:
+                problems[i] = "Space group mismatch", row["Space group #"], SpacegroupAnalyzer(structure, symprec=2e-3).get_space_group_number()
+                continue
+            
+        if not close_composition(Composition(row["True Composition"]), structure.composition, row["Z"], tol):
+            problems[i] = "Composition mismatch", row["True Composition"], str(structure.composition), row["close match"]
+            continue
+
+        if row["close match"] == "Yes":
+            rtol = 1e-2
+        else:
+            rtol = 1e-5
+        
+        if not np.allclose(structure.lattice.abc, (row["a"], row["b"], row["c"]), rtol=rtol):
+            problems[i] = "Lattice mismatch", (row["a"], row["b"], row["c"]), structure.lattice.abc, row["close match"]
+            continue
+            
+        if not np.allclose(structure.lattice.angles, (row["alpha"], row["beta"], row["gamma"]), rtol=rtol):
+            problems[i] = "Angles mismatch", (row["alpha"], row["beta"], row["gamma"]), structure.lattice.angles, row["close match"]
+            continue
     
     print(len(problems), "problems found")
-    print(problems)
+    for k,v in problems.items():
+        print(k, ":", v)
 
         
