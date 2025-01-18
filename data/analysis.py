@@ -6,6 +6,7 @@ from pymatgen.core.periodic_table import Element
 import seaborn as sns
 from matplotlib.colors import ListedColormap
 
+plt.rcParams['font.size'] = 14
 
 plt.rcParams['text.usetex'] = True
 
@@ -101,8 +102,9 @@ def plot_similar(df, subset, palette = ["red", "blue"]):
     #plt.boxplot(np.concatenate(stds_alt))
     diff_df = pd.DataFrame(np.concatenate(stds_alt), columns=["Difference with mean log$_{10}$(Ionic Conductivity)"])
     sns.violinplot(data=diff_df["Difference with mean log$_{10}$(Ionic Conductivity)"], inner_kws=dict(box_width=15, whis_width=2, color=".8"))
-
-    plt.savefig("violon.png")
+    plt.grid()
+    
+    plt.savefig("violon.svg")
     
     sorted_idx = [same_comps[i] for i in np.argsort(diffs)]
 
@@ -132,7 +134,7 @@ def plot_similar(df, subset, palette = ["red", "blue"]):
     col_max = np.max(colors)
     col_min = np.min(colors)
     
-    fig = plt.figure(figsize=(12, 6))
+    fig = plt.figure(figsize=(16, 8))
     ax = plt.gca()
     cm = plt.cm.get_cmap('winter')
     ax.vlines(np.arange(len(repeated_comps)), ymins, ymaxs, alpha=0.3, color='k')
@@ -142,12 +144,12 @@ def plot_similar(df, subset, palette = ["red", "blue"]):
     ax.set_xticks(np.arange(len(repeated_comps)), names, rotation=45, ha='left')
     ax.grid()
     ax.xaxis.tick_top()
-    ax.set_ylabel(r"Log$_10$(Ionic conductivity)")
+    ax.set_ylabel(r"Ionic conductivity (S/cm)")
     cbar = plt.colorbar(s)
     cbar.set_label('Max \% difference between lattice parameters', rotation=270, labelpad=15)
     fig.tight_layout()
 
-    plt.savefig("differences_same_struct.png")
+    plt.savefig("differences_same_struct.svg")
     
     diffs = [abs(d) for i in idx for d in np.log10(df_list[i]["Ionic conductivity (S cm-1)"]) - np.log10(df_list[i]["Ionic conductivity (S cm-1)"]).mean()]
     dists = [d for i in idx for d in dists[i]]
@@ -236,9 +238,13 @@ def density_of_carriers(data):
 def distributions(data):
 
     plt.figure()
-    ax=sns.displot(data=data, x="Ionic conductivity (S cm-1)", hue="CIF", kde=True, multiple="stack", row="in_test", log_scale=True, hue_order=["No Match", "Close Match", "Match"], facet_kws={'sharey': False}, palette=palette)
+    ax = sns.displot(data=data, x="Ionic conductivity (S cm-1)", hue="CIF", kde=True, multiple="stack", row="in_test", log_scale=True, hue_order=["No Match", "Close Match", "Match"], facet_kws={'sharey': False}, palette=palette, alpha=1, ec="w")
+    for axe in ax.axes:
+        for line in axe[0].lines:
+            line.set_linestyle("--")
+            line.set_color("black")
 
-    plt.savefig("IC_distribution.png")
+    plt.savefig("IC_distribution.svg")
 
     plt.figure()
     ax=sns.displot(data=data, x="Space group number", hue="CIF", kde=True, multiple="stack", row="in_test", hue_order=["No Match", "Close Match", "Match"], facet_kws={'sharey': False}, palette=palette)
@@ -260,14 +266,20 @@ def get_number_of_elements(formula):
     return pd.Series({elem[0]: 1 for elem in broken_down_formula})
     
 def periodic_table_map(data):
-    from pymatviz import ptable_heatmap
+    from pymatviz import ptable_heatmap, ptable_heatmap_ratio, ptable_heatmap_splits
     import matplotlib.colors as colors
     occurences = data["Composition"].apply(get_number_of_elements).sum()
-    #ptable_heatmap(occurences, colormap="winter", cbar_kwargs={"norm": colors.LogNorm(vmin=1, vmax=occurences.max())})
-    plt.figure()
-    ptable_heatmap(occurences, colormap="Spectral_r")
 
-    plt.savefig("prediodic_table.png")
+    ptable_heatmap(occurences/5.99, colormap="ocean_r", cbar_kwargs={"norm": colors.LogNorm(vmin=0, vmax=100)}, nan_color="w", cbar_title="Prevalence in dataset (\%)")
+
+    plt.savefig("periodic_table.svg")
+
+    test_occurences = data["Composition"][data["in_test"]].apply(get_number_of_elements).sum()
+    train_occurences = data["Composition"][~data["in_test"]].apply(get_number_of_elements).sum()
+
+    occurences = pd.concat([test_occurences/sum(data["in_test"]), train_occurences/sum(~data["in_test"])], axis=1)
+    
+    ptable_heatmap_splits(occurences, colormap="ocean_r", cbar_kwargs={"norm": colors.LogNorm(vmin=0, vmax=100)}, cbar_title="Prevalence in dataset (\%)")
 
 def print_stats(data):
     mean_train = np.log10(data["Ionic conductivity (S cm-1)"][~data["in_test"]]).mean()
@@ -282,13 +294,67 @@ def print_stats(data):
     print("Train avg on test: ", np.abs(mean_train - np.log10(data["Ionic conductivity (S cm-1)"][data["in_test"]])).mean())
     
 def spg_charts(data):
-    from pymatviz import spacegroup_sunburst
-    # plotly
-    fig = spacegroup_sunburst(data["Space group number"][data["in_test"]], show_counts='value', color_discrete_sequence=palette)
-    fig.show()
 
-    fig = spacegroup_sunburst(data["Space group number"][~data["in_test"]], show_counts='value', color_discrete_sequence=palette)
-    fig.show()
+    manual_pie_chart(data["Space group number"][data["in_test"]])
+    plt.savefig("spg_pie_test.svg")
+    manual_pie_chart(data["Space group number"][~data["in_test"]])
+    plt.savefig("spg_pie_train.svg")
+
+def manual_pie_chart(data):
+    plt.figure()
+    x = data.value_counts()
+    x.sort_index(inplace=True)
+
+    colors = [[] for _ in range(6)]
+    spg = [[] for _ in range(6)]
+    count = [[] for _ in range(6)]
+    for i in x.index:
+        if i <= 2:
+            colors[0].append(palette[0])
+            spg[0].append(i)
+            count[0].append(x[i])
+        elif i <= 15:
+            colors[1].append(palette[1])
+            spg[1].append(i)
+            count[1].append(x[i])
+        elif i <= 74:
+            colors[2].append(palette[2])
+            spg[2].append(i)
+            count[2].append(x[i])
+        elif i <= 142:
+            colors[3].append(palette[3])
+            spg[3].append(i)
+            count[3].append(x[i])
+        elif i <= 167:
+            colors[4].append(palette[4])
+            spg[4].append(i)
+            count[4].append(x[i])
+        else:
+            colors[5].append(palette[5])
+            spg[5].append(i)
+            count[5].append(x[i])
+
+    id_order = np.argsort([sum(c) for c in count])
+    id_orders = [np.argsort(c) for c in count]
+    colors = [[colors[i][j] for j in id_orders[i]] for i in id_order]
+    spg = [[(spg[i][j] if count[i][j]/x.sum() > 0.01 else "") for j in id_orders[i]] for i in id_order]
+    count = [[count[i][j] for j in id_orders[i]] for i in id_order]
+    
+
+    flat_spg = [item for sublist in spg for item in sublist]
+    flat_count = [item for sublist in count for item in sublist]
+    flat_colors = [item for sublist in colors for item in sublist]
+
+    crystal_fams = ["Triclinic", "Monoclinic", "Orthorhombic", "Tetragonal", "Hexagonal", "Cubic"]
+
+    colapsed_count = [sum(c) for c in count]
+    colapsed_spg = [crystal_fams[i] for i in id_order]
+    colapsed_colors = [palette[i] for i in id_order]
+    
+    size = 0.3
+    plt.pie(flat_count, labels=flat_spg, colors=flat_colors, radius=1, wedgeprops=dict(width=size, edgecolor='w'), rotatelabels=True, labeldistance=1.01, counterclock=False, startangle=90)
+    wedges,_ = plt.pie(colapsed_count,labels=colapsed_spg, colors=colapsed_colors, radius=1-size, labeldistance=None, wedgeprops=dict(width=size, edgecolor='w'), counterclock=False, startangle=90)
+    plt.legend(wedges, colapsed_spg, title="Crystal families", loc="center left", bbox_to_anchor=(1, 0, 0.5, 1))
     
 if __name__ == "__main__":
 
@@ -296,7 +362,7 @@ if __name__ == "__main__":
     test = pd.read_csv('../test_idx.csv', index_col="ID")
     data["in_test"] = data.index.isin(test.index)
 
-    # Similar entries plots
+    # # Similar entries plots
     plot_similar(data, ['Composition', 'Space group number'])
 
     # Relevant quantities plots
@@ -308,7 +374,7 @@ if __name__ == "__main__":
     # Periodec table heatmap
     periodic_table_map(data)
 
-    # Space group pi charts
+    Space group pi charts
     spg_charts(data)
 
     # Stats
