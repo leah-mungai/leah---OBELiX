@@ -1,57 +1,40 @@
-seed: 10
-
-# File and directory paths
-runtime_files:
-  - "./splitting.lock"
-  - "./test.db"
-  - "./pre-transformed.pkl"
-  - "./split.npz"
-  - "./test_split.npz"
-
-  
-database_path: '../../../data/processed.csv'
-test_path: '../../../test_idx.csv'
-cif_file_dir: '../../../data/np_cifs'
-overwrite_db: True
-db_dir: '.'
-extra_plots: True
-show: True
-
-# Data processing parameters
-representation: "painn"
-cutoff: [5]
-n_atom_basis: [20]
-n_interactions: 3
+actual_list:
+- runtime_files
 batch_size: 32
-n_train_data: 600
-num_folds: 2
-n_param_combs: 100
-actual_list: [runtime_files]
-
-# CIF file reading parameters
+cif_file_dir: ../../../data/np_cifs
 cif_read_options:
-  index: -1
-  store_tags: false
-  primitive_cell: false
-  subtrans_included: true
   fractional_occupancies: true
-  reader: 'ase'
-
-# Number of workers and memory handling
-num_workers: 4
-pin_memory: false
-
-# Trainer configurations
-max_epochs: 30
-learning_rate: 0.001
-weight_decay: 0
-
-# Logging and checkpoint paths
-out_dir: 'painn'
-
-# Plot settings
+  index: -1
+  primitive_cell: false
+  reader: ase
+  store_tags: false
+  subtrans_included: true
+cutoff: 10
+database_path: ../../../data/processed.csv
+db_dir: .
+extra_plots: true
 high_dpi: 300
-
-# Metrics settings
-monitor_metric: 'val_loss'
+learning_rate: 0.001
+max_epochs: 100
+monitor_metric: val_loss
+n_atom_basis: 80
+n_interactions: 3
+n_param_combs: 100
+n_train_data: 600
+num_folds: 5
+num_workers: 0
+out_dir: painn_best_only
+overwrite_db: true
+pin_memory: false
+representation: painn
+runtime_files:
+- ./splitting.lock
+- ./test.db
+- ./pre-transformed.pkl
+- ./split.npz
+- ./test_split.npz
 save_top_k: 1
+seed: 10
+show: false
+test_path: ../../../test_idx.csv
+weight_decay: 0

@@ -314,15 +314,27 @@ def train(props, split_file, db_path, config, savedir):
     global metrics_df
     metrics_df = pd.DataFrame(columns=["Epoch", "Train Loss", "Val Loss", "Train MAE", "Val MAE"])
 
-
-    callbacks = [
-        spk.train.ModelCheckpoint(
-            model_path=savedir + "/best_model.pth",
-            save_top_k=config["save_top_k"],
-            monitor=config["monitor_metric"]
-        ),
-        MetricTracker(),
-    ]
+    if custom_data.num_val != 0:
+        print("Using validation callback")
+        callbacks = [
+            spk.train.ModelCheckpoint(
+                model_path=savedir + "/best_model.pth",
+                save_top_k=config["save_top_k"],
+                monitor=config["monitor_metric"]
+            ),
+            MetricTracker(),
+        ]
+    else:
+        print("Not using validation callback")
+        callbacks = [
+            pl.callbacks.ModelCheckpoint(
+                dirpath = savedir,
+                filename = "/best_model.pth",
+                save_top_k=config["save_top_k"],
+                monitor=None
+            ),
+            MetricTracker(),
+        ]
 
     trainer = pl.Trainer(
         callbacks=callbacks,
@@ -352,6 +364,8 @@ def crossval(props, db_path, train_data, config, rng, savedir):
     train_maes = []
     val_maes = []
     for i in range(config["num_folds"]):
+
+        print(f"Working on fold {i}...")
         
         train_idx = np.concatenate(splits[:i] + splits[i+1:])
         val_idx = splits[i]
@@ -447,9 +461,12 @@ def main():
 
         savedir = config["out_dir"] + f"/config_{i}"
         Path(savedir).mkdir(parents=True, exist_ok=True)
-        
-        val_mae, val_std = crossval(props, db_path, train_data, tmp_config, rng, savedir)
 
+        try:
+            val_mae, val_std = crossval(props, db_path, train_data, tmp_config, rng, savedir)
+        except torch.OutOfMemoryError:
+            val_mae, val_std = np.nan, np.nan
+            
         maes.append(val_mae)
         yaml.dump(tmp_config, open(savedir + "/config.yaml", 'w'))
         
@@ -464,10 +481,13 @@ def main():
     print("Best configuration found:")
     print(f"Validation MAE: {best_val_mae} +/- {best_val_std}")
 
+    pickle.dump((param_grid, maes), open(config["out_dir"] + "/maes.pkl", 'wb'))
+    
     plt.figure()
     cm = plt.cm.get_cmap('winter')
-    for i, params in param_grid.iterrows():
-        plt.plot(params.index, params.to_numpy(), color=cm((maes[i] - maes.min()) / (maes.max() - maes.min())))
+    norm_param_grid = (param_grid-param_grid.min())/(param_grid.max()-param_grid.min())
+    for i, params in norm_param_grid.iterrows():
+        plt.plot(params.index, params.to_numpy(), color=cm((maes[i] - np.nanmin(maes)) / (np.nanmax(maes) - np.nanmin(maes))))
     plt.xlabel('Configuration')
     plt.ylabel('Hyper-parameter value')
     plt.colorbar(plt.cm.ScalarMappable(cmap=cm), label='Validation MAE', ax=plt.gca())
@@ -504,7 +524,7 @@ def main():
 
     plot_actual_vs_predicted(pred_train, target_train,
                              pred_test, target_test,
-                             "final model vs test", config["out_dir"] + "/target_vs_train.svg")
+                             "final model vs test", config["out_dir"] + "/target_vs_test.svg")
 
     print("Final model evaluation:")
     print("Final train MAE:", np.mean(np.abs(pred_train - target_train)))
