@@ -1,36 +1,42 @@
-from dave.proxies.data import CrystalFeat
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.neural_network import MLPRegressor
-from sklearn.model_selection import GridSearchCV
-from sklearn.model_selection import cross_validate
-from pathlib import Path
-import torch
+from parse import read_xy
+
 import numpy as np
+import pandas as pd
+from pathlib import Path
 import matplotlib.pyplot as plt
-from sklearn.model_selection import LearningCurveDisplay, ShuffleSplit
+from sklearn.preprocessing import StandardScaler
+from sklearn.neural_network import MLPRegressor
+
+from sklearn.model_selection import GridSearchCV
 
 
-DATA_PATH = Path("/home/felixt/GoogleDrive/Mila/ionic-cond/ionic-conductivity/benchmark/nrcc_ionic_conductivity")
-print(DATA_PATH)
+BASE_PATH = Path(__file__).parent.parent
+DATA_PATH = BASE_PATH / "data"
+MODEL_PATH = BASE_PATH / "benchmark"
 
+cif = True
+xy = read_xy(DATA_PATH / "processed.csv")
 
-# Reconverting data to numpy array
-x_mean = torch.load(str(DATA_PATH / "x.mean"), weights_only=True)
-x_std = torch.load(str(DATA_PATH / "x.std"), weights_only=True)
+train_idx = [l.strip() for l in open(BASE_PATH / "train_idx.csv")][1:]
+test_idx = [l.strip() for l in open(BASE_PATH / "test_idx.csv")][1:]
 
-trainset = CrystalFeat(root=str(DATA_PATH), target="Ionic conductivity (S cm-1)", subset="train", scalex={"mean":x_mean, "std":x_std})
-x_train = []
-y_train = []
+scaler = StandardScaler()
+xy["Ionic conductivity (S cm-1)"] = xy["Ionic conductivity (S cm-1)"].map(np.log10)
 
-for i, (x, y) in enumerate(trainset):
-    a, b, c = x
-    # print(a[a != 0])
-    # if i == 10:
-    #     break
-    b = b.unsqueeze(-1)
-    x = torch.cat((a, b, c), dim=-1)
-    x_train.append(x.numpy())
-    y_train.append(np.log10(y.numpy()))
+train_xy = xy.loc[train_idx]
+test_xy = xy.loc[test_idx]
+scaler = scaler.fit(train_xy.iloc[:, -7:-2])
+train_xy.iloc[:, -7:-2] = scaler.transform(train_xy.iloc[:, -7:-2])
+test_xy.iloc[:, -7:-2] = scaler.transform(test_xy.iloc[:, -7:-2])
+# both = [train_xy, test_xy]
+if cif:
+    m = train_xy[train_xy["CIF"] == "Match"]
+    cm = train_xy[train_xy["CIF"] == "Close Match"]
+    train_xy = pd.concat([m, cm], axis=0)
+train_xy = train_xy.drop("CIF", axis=1)
+
+x_train = train_xy.iloc[:, :-1].to_numpy()
+y_train = train_xy.iloc[:, -1].to_numpy()
 idx = np.arange(len(x_train))
 np.random.shuffle(idx)
 x_train = np.array(x_train)[idx]
@@ -42,42 +48,70 @@ hparams = {
     "activation": "relu",
     "solver": "adam",
     "learning_rate_init": 0.01,
-    # "validation_fraction" :0.2,
     "early_stopping": True,
     "batch_size": 32,
     "max_iter": 1000,
     "learning_rate": "adaptive",
-    "n_iter_no_change": 100
+    "n_iter_no_change": 100,
 }
 
 model = MLPRegressor(**hparams)
-res = cross_validate(model, x_train, y_train.reshape((-1,)), cv=5, scoring="neg_mean_absolute_error", return_train_score=True, return_estimator=True)
-print("Train scores", res["train_score"])
-print(" Test scores", res["test_score"])
-print("Example RF result:", -np.mean((res["test_score"])), "±", np.std((res["test_score"])))
 
-for est in res["estimator"]:
-    loss = est.loss_curve_
-    plt.figure()
-    plt.plot(loss)
-    plt.yscale("log")
+# for est in res["estimator"]:
+#     loss = est.loss_curve_
+#     plt.figure()
+#     plt.plot(loss)
+#     plt.yscale("log")
 
-    plt.figure()
-    plt.scatter(y_train, est.predict(x_train))
+#     plt.figure()
+#     plt.scatter(y_train, est.predict(x_train))
 
-plt.show()
+# plt.savefig("mlp_bm.png")
 
-# gs = GridSearchCV(estimator=model, param_grid=hparams, cv=5)
+hparams = {
+    "hidden_layer_sizes": [
+        [32, 32],
+        [16, 16],
+        [64, 64],
+        [128, 128],
+        [256, 256],
+        [32, 32, 32],
+        [16, 16, 16],
+        [64, 64, 64],
+        [128, 128, 128],
+        [256, 256, 256],
+        [32, 32, 32, 32],
+        [16, 16, 16, 16],
+        [64, 64, 64, 64],
+        [128, 128, 128, 128],
+        [256, 256, 256, 256],
+        [64, 64, 64, 64, 64],
+    ],
+    "activation": ["relu"],
+    "solver": ["adam"],
+    "learning_rate_init": [0.003, 0.01, 0.03, 0.1, 0.3],
+    "early_stopping": [True],
+    "batch_size": [16, 32, 64],
+    "max_iter": [1000],
+    "learning_rate": ["adaptive"],
+    "n_iter_no_change": [100],
+}
+
+gs = GridSearchCV(
+    estimator=model, param_grid=hparams, cv=5, scoring="neg_mean_absolute_error"
+)
+gs.fit(x_train, y_train)
 # model.fit(x_train[-86:], y_train[-86:])
 # model.score(x_train[-86:], y_train[-86:])
-# best = gs.best_score_
-# print(best)
+
 # print(gs.best_estimator_)
-# print(gs.best_params_)
-
-
-# In[ ]:
-
-
-
-
+print("Best parameters:", gs.best_params_)
+print(
+    "Best MLP result:",
+    abs(gs.cv_results_["mean_test_score"][gs.best_index_]),
+    "±",
+    gs.cv_results_["std_test_score"][gs.best_index_],
+)
+plt.plot(gs.best_estimator_.loss_curve_)
+plt.plot(gs.best_estimator_.validation_scores_)
+plt.savefig("mlp_bm.png")
