@@ -11,18 +11,38 @@ import warnings
 symprec = 2e-3
 make_np = True
 
-def remove_partial_occ(structure):
+def remove_partial_occ(structure, random=False, seed=0):
+    rng = np.random.RandomState(seed)
     structure = structure.copy()
     to_remove = []
     for i, site in enumerate(structure):
-        for k,v in site.species.as_dict().items():
-            v = int(round(v))
-            if v == 1:
+        if random:
+            if abs(sum(site.species.as_dict().values()) - 1) < 3e-2:
+                p = list(site.species.as_dict().values())/sum(site.species.as_dict().values())
+                k = rng.choice(site.species.as_dict().keys(), p=p)
                 new_occ = {k: 1}
-                structure[i]._species = Composition(new_occ) 
-                break
-        else:
-            to_remove.append(i)
+                structure[i]._species = Composition(new_occ)
+            else:
+                p = list(site.species.as_dict().values()) + [1 - sum(site.species.as_dict().values())]
+                keys = list(site.species.as_dict().keys()) + ["remove"]
+                k = rng.choice(keys, p=p)
+                if k == "remove":
+                    to_remove.append(i)
+                else:
+                    new_occ = {k: 1}
+                    structure[i]._species = Composition(new_occ)
+        else:   
+            for k,v in site.species.as_dict().items():
+                if random:
+                    v = int(rng.binomial(1, min(v,1)))
+                else:
+                    v = int(round(v))
+                if v == 1:
+                    new_occ = {k: 1}
+                    structure[i]._species = Composition(new_occ) 
+                    break
+            else:
+                to_remove.append(i)
     structure.remove_sites(to_remove)
     return structure
 
