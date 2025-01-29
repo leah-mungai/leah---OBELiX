@@ -12,7 +12,7 @@ def flatten_comp(true_comp, compdf):
     return compdf
 
 
-def read_xy(csv_fptr, cif=True, partial=True):
+def read_xy(csv_fptr, partial=True):
     data = pd.read_csv(
         csv_fptr,
         index_col="ID",
@@ -39,28 +39,17 @@ def read_xy(csv_fptr, cif=True, partial=True):
     comp_df = flatten_comp(data["Composition"], comp_df)
     comp_df = comp_df.loc[:, (comp_df != 0).any(axis=0)]
     if not partial:
-        comp_df = comp_df.map(round, axis=1)
+        comp_df = comp_df.round(0)
     data = data.drop("Composition", axis=1)
     data = pd.concat([comp_df, data], axis=1)
     return data
 
 
 if __name__ == "__main__":
-    read_xy("/home/mila/d/divya.sharma/ionic-conductivity/data/processed.csv", False)
-    ### Latest
-    # mean
-    # a                               9.307045
-    # b                               9.213725
-    # c                              12.418862
-    # alpha                          90.260857
-    # beta                           91.176803
-    # gamma                          97.260356
-    # Ionic conductivity (S cm-1)     0.000907
-    # Std
-    # a                               3.117529
-    # b                               3.488247
-    # c                               5.601230
-    # alpha                           2.425697
-    # beta                            5.300615
-    # gamma                          13.154874
-    # Ionic conductivity (S cm-1)     0.002588
+    pd.set_option("display.max_columns", None)
+    print(
+        read_xy(
+            "/home/mila/d/divya.sharma/ionic-conductivity/data/processed.csv",
+            partial=False,
+        )
+    )

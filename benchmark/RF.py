@@ -9,31 +9,29 @@ from sklearn.ensemble import RandomForestRegressor
 
 from sklearn.model_selection import GridSearchCV
 from sklearn.model_selection import cross_validate
-from pathlib import Path
+from sklearn.metrics import mean_absolute_error
 
-# from sklearn.model_selection import LearningCurveDisplay, ShuffleSplit
-
+np.random.seed(0)
 
 BASE_PATH = Path(__file__).parent.parent
 DATA_PATH = BASE_PATH / "data"
 MODEL_PATH = BASE_PATH / "benchmark"
 
-cif = True
-xy = read_xy(DATA_PATH / "processed.csv")
+cif_only = False
+xy = read_xy(DATA_PATH / "processed.csv")  # , partial=False)
 
 train_idx = [l.strip() for l in open(BASE_PATH / "train_idx.csv")][1:]
 test_idx = [l.strip() for l in open(BASE_PATH / "test_idx.csv")][1:]
 
 scaler = StandardScaler()
 xy["Ionic conductivity (S cm-1)"] = xy["Ionic conductivity (S cm-1)"].map(np.log10)
-
 train_xy = xy.loc[train_idx]
 test_xy = xy.loc[test_idx]
-scaler = scaler.fit(train_xy.iloc[:, -7:-1])
-train_xy.iloc[:, -7:-1] = scaler.transform(train_xy.iloc[:, -7:-1])
-test_xy.iloc[:, -7:-1] = scaler.transform(test_xy.iloc[:, -7:-1])
-both = [train_xy, test_xy]
-if cif:
+scaler = scaler.fit(train_xy.iloc[:, -8:-2])
+train_xy.iloc[:, -8:-2] = scaler.transform(train_xy.iloc[:, -8:-2])
+test_xy.iloc[:, -8:-2] = scaler.transform(test_xy.iloc[:, -8:-2])
+
+if cif_only:
     m = train_xy[train_xy["CIF"] == "Match"]
     cm = train_xy[train_xy["CIF"] == "Close Match"]
     train_xy = pd.concat([m, cm], axis=0)
@@ -41,6 +39,7 @@ train_xy = train_xy.drop("CIF", axis=1)
 
 x_train = train_xy.iloc[:, :-1].to_numpy()
 y_train = train_xy.iloc[:, -1].to_numpy()
+
 idx = np.arange(len(x_train))
 np.random.shuffle(idx)
 x_train = np.array(x_train)[idx]
@@ -49,8 +48,8 @@ y_train = np.array(y_train)[idx]
 
 hparams = {
     "n_estimators": [50, 100, 150, 200],
-    "max_depth": [12, 24, 36, 48, 56, 64],
-    "max_features": ["log2", "sqrt"],
+    "max_depth": [12, 24, 36, 48, 56, 64, None],
+    "max_features": ["log2", "sqrt", None],
     "min_samples_leaf": [1, 2, 3, 4, 5],
 }
 
@@ -61,15 +60,7 @@ hparams_ex = {
     "n_estimators": 50,
 }
 
-model = RandomForestRegressor(**hparams_ex)
-# res = cross_validate(model, x_train, y_train, cv=5, scoring="neg_mean_absolute_error")
-
-# print(
-#     "Example RF result:",
-#     -np.mean((res["test_score"])),
-#     "±",
-#     np.std((res["test_score"])),
-# )
+model = RandomForestRegressor(**hparams_ex, oob_score="neg_mean_absolute_error")
 
 gs = GridSearchCV(
     estimator=model, param_grid=hparams, cv=5, scoring="neg_mean_absolute_error"
@@ -84,10 +75,49 @@ print(
     "±",
     gs.cv_results_["std_test_score"][gs.best_index_],
 )
-# y_train = np.array(y_train).reshape(-1, 1)
-# y_pred = gs.best_estimator_.predict(x_train)
 
-# plt.figure()
-# plt.scatter(y_train, y_pred)
+# Drop CIF == True
+# best_params = {
+#     "max_depth": 64,
+#     "max_features": None,
+#     "min_samples_leaf": 1,
+#     "n_estimators": 200,
+# }
 
-# plt.show()
+# Drop CIF == False
+# best_params = {
+#     "max_depth": 36,
+#     "max_features": "sqrt",
+#     "min_samples_leaf": 1,
+#     "n_estimators": 50,
+# }
+
+# Partial == False
+# best_params = {
+#     "max_depth": 36,
+#     "max_features": "sqrt",
+#     "min_samples_leaf": 1,
+#     "n_estimators": 100,
+# }
+
+# model = RandomForestRegressor(**best_params, oob_score="neg_mean_absolute_error")
+# model.fit(x_train, y_train)
+# plt.plot(model.loss_curve_)
+
+# for cif_only in [True, False]:
+#     if cif_only:
+#         m = test_xy[test_xy["CIF"] == "Match"]
+#         cm = test_xy[test_xy["CIF"] == "Close Match"]
+#         test = pd.concat([m, cm], axis=0)
+#         test = test.drop("CIF", axis=1)
+#     else:
+#         test = test_xy.drop("CIF", axis=1)
+
+#     x_test = test.iloc[:, :-1].to_numpy()
+#     y_test = test.iloc[:, -1].to_numpy()
+#     y_pred = model.predict(x_test)
+#     loss = mean_absolute_error(y_test, y_pred)
+#     if cif_only:
+#         print("CIF Only", loss)
+#     else:
+#         print("Whole dataset", loss)

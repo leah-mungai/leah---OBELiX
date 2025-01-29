@@ -8,14 +8,16 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.neural_network import MLPRegressor
 
 from sklearn.model_selection import GridSearchCV
+from sklearn.metrics import mean_absolute_error
 
+np.random.seed(0)
 
 BASE_PATH = Path(__file__).parent.parent
 DATA_PATH = BASE_PATH / "data"
 MODEL_PATH = BASE_PATH / "benchmark"
 
-cif = True
-xy = read_xy(DATA_PATH / "processed.csv")
+cif_only = False
+xy = read_xy(DATA_PATH / "processed.csv")  # , partial=False)
 
 train_idx = [l.strip() for l in open(BASE_PATH / "train_idx.csv")][1:]
 test_idx = [l.strip() for l in open(BASE_PATH / "test_idx.csv")][1:]
@@ -25,11 +27,11 @@ xy["Ionic conductivity (S cm-1)"] = xy["Ionic conductivity (S cm-1)"].map(np.log
 
 train_xy = xy.loc[train_idx]
 test_xy = xy.loc[test_idx]
-scaler = scaler.fit(train_xy.iloc[:, -7:-2])
-train_xy.iloc[:, -7:-2] = scaler.transform(train_xy.iloc[:, -7:-2])
-test_xy.iloc[:, -7:-2] = scaler.transform(test_xy.iloc[:, -7:-2])
+scaler = scaler.fit(train_xy.iloc[:, -8:-2])
+train_xy.iloc[:, -8:-2] = scaler.transform(train_xy.iloc[:, -8:-2])
+test_xy.iloc[:, -8:-2] = scaler.transform(test_xy.iloc[:, -8:-2])
 # both = [train_xy, test_xy]
-if cif:
+if cif_only:
     m = train_xy[train_xy["CIF"] == "Match"]
     cm = train_xy[train_xy["CIF"] == "Close Match"]
     train_xy = pd.concat([m, cm], axis=0)
@@ -37,6 +39,7 @@ train_xy = train_xy.drop("CIF", axis=1)
 
 x_train = train_xy.iloc[:, :-1].to_numpy()
 y_train = train_xy.iloc[:, -1].to_numpy()
+
 idx = np.arange(len(x_train))
 np.random.shuffle(idx)
 x_train = np.array(x_train)[idx]
@@ -57,16 +60,6 @@ hparams = {
 
 model = MLPRegressor(**hparams)
 
-# for est in res["estimator"]:
-#     loss = est.loss_curve_
-#     plt.figure()
-#     plt.plot(loss)
-#     plt.yscale("log")
-
-#     plt.figure()
-#     plt.scatter(y_train, est.predict(x_train))
-
-# plt.savefig("mlp_bm.png")
 
 hparams = {
     "hidden_layer_sizes": [
@@ -101,10 +94,7 @@ gs = GridSearchCV(
     estimator=model, param_grid=hparams, cv=5, scoring="neg_mean_absolute_error"
 )
 gs.fit(x_train, y_train)
-# model.fit(x_train[-86:], y_train[-86:])
-# model.score(x_train[-86:], y_train[-86:])
 
-# print(gs.best_estimator_)
 print("Best parameters:", gs.best_params_)
 print(
     "Best MLP result:",
@@ -112,6 +102,68 @@ print(
     "±",
     gs.cv_results_["std_test_score"][gs.best_index_],
 )
-plt.plot(gs.best_estimator_.loss_curve_)
-plt.plot(gs.best_estimator_.validation_scores_)
-plt.savefig("mlp_bm.png")
+# plt.plot(gs.best_estimator_.loss_curve_)
+# plt.plot(gs.best_estimator_.validation_scores_)
+# plt.yscale("log")
+# plt.savefig("mlp_bm.png")
+
+# Drop CIF = True
+# best_params = {
+#     "activation": "relu",
+#     "batch_size": 16,
+#     "early_stopping": True,
+#     "hidden_layer_sizes": [16, 16, 16],
+#     "learning_rate": "adaptive",
+#     "learning_rate_init": 0.01,
+#     "max_iter": 1000,
+#     "n_iter_no_change": 100,
+#     "solver": "adam",
+# }
+
+
+# Drop CIF = False
+# best_params = {
+#     "activation": "relu",
+#     "batch_size": 16,
+#     "early_stopping": True,
+#     "hidden_layer_sizes": [64, 64, 64, 64],
+#     "learning_rate": "adaptive",
+#     "learning_rate_init": 0.003,
+#     "max_iter": 1000,
+#     "n_iter_no_change": 100,
+#     "solver": "adam",
+# }
+
+# Partial = False
+# best_params = {
+#     "activation": "relu",
+#     "batch_size": 16,
+#     "early_stopping": True,
+#     "hidden_layer_sizes": [64, 64, 64, 64, 64],
+#     "learning_rate": "adaptive",
+#     "learning_rate_init": 0.01,
+#     "max_iter": 1000,
+#     "n_iter_no_change": 100,
+#     "solver": "adam",
+# }
+
+# model = MLPRegressor(**best_params)
+# model.fit(x_train, y_train)
+
+# for cif_only in [True, False]:
+#     if cif_only:
+#         m = test_xy[test_xy["CIF"] == "Match"]
+#         cm = test_xy[test_xy["CIF"] == "Close Match"]
+#         test = pd.concat([m, cm], axis=0)
+#         test = test.drop("CIF", axis=1)
+#     else:
+#         test = test_xy.drop("CIF", axis=1)
+
+#     x_test = test.iloc[:, :-1].to_numpy()
+#     y_test = test.iloc[:, -1].to_numpy()
+#     y_pred = model.predict(x_test)
+#     loss = mean_absolute_error(y_test, y_pred)
+#     if cif_only:
+#         print("CIF Only", loss)
+#     else:
+#         print("Whole dataset", loss)
