@@ -627,12 +627,12 @@
        xml:space="preserve"
        transform="matrix(0.1306796,0,0,0.1306796,336.71677,254.94331)"
        id="text125352"
-       style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:37.3333px;font-family:sans-serif;-inkscape-font-specification:'sans-serif Bold';text-align:center;white-space:pre;shape-inside:url(#rect125354);fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.755906;stroke-linecap:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"><tspan
-         x="-1155.1327"
-         y="-15.710966"
-         id="tspan10837"><tspan
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:37.79387823px;font-family:sans-serif;-inkscape-font-specification:sans-serif;text-align:center;white-space:pre;shape-inside:url(#rect125354);fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.755906;stroke-linecap:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"><tspan
+         x="-1137.4991"
+         y="-15.303465"
+         id="tspan71232"><tspan
            style="stroke-linecap:butt"
-           id="tspan10835">Crystal families</tspan></tspan></text>
+           id="tspan71230">Crystal families</tspan></tspan></text>
     <path
        style="fill:none;stroke:#666666;stroke-width:0.2;stroke-linecap:round;stroke-miterlimit:4;stroke-dasharray:0.6, 0.6;stroke-dashoffset:0"
        d="M 69.48936,253.11703 V 32.061939"
@@ -3077,9 +3077,9 @@
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:18.6667px;font-family:AnjaliOldLipi;-inkscape-font-specification:AnjaliOldLipi;white-space:pre;shape-inside:url(#rect29222);fill:none;stroke:none;stroke-width:0.755906;stroke-linecap:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"><tspan
          x="232.64258"
          y="179.4147"
-         id="tspan10841"><tspan
+         id="tspan71236"><tspan
            style="fill:#000000;stroke-linecap:butt"
-           id="tspan10839">Not available</tspan></tspan></text>
+           id="tspan71234">Not available</tspan></tspan></text>
     <text
        xml:space="preserve"
        transform="matrix(0.26458333,0,0,0.26458333,2.0447771,15.016137)"
@@ -3087,9 +3087,9 @@
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:18.6667px;font-family:AnjaliOldLipi;-inkscape-font-specification:AnjaliOldLipi;white-space:pre;shape-inside:url(#rect47294);fill:none;stroke:none;stroke-width:0.755906;stroke-linecap:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"><tspan
          x="232.64258"
          y="179.4147"
-         id="tspan10845"><tspan
+         id="tspan71240"><tspan
            style="fill:#000000;stroke-linecap:butt"
-           id="tspan10843">Available</tspan></tspan></text>
+           id="tspan71238">Available</tspan></tspan></text>
     <text
        xml:space="preserve"
        transform="matrix(0.26458333,0,0,0.26458333,1.8277341,8.1604661)"
@@ -3097,9 +3097,9 @@
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:18.6667px;font-family:AnjaliOldLipi;-inkscape-font-specification:AnjaliOldLipi;white-space:pre;shape-inside:url(#rect51716);fill:none;stroke:none;stroke-width:0.755906;stroke-linecap:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"><tspan
          x="232.64258"
          y="179.4147"
-         id="tspan10849"><tspan
+         id="tspan71244"><tspan
            style="fill:#000000;stroke-linecap:butt"
-           id="tspan10847">Close match</tspan></tspan></text>
+           id="tspan71242">Close match</tspan></tspan></text>
     <g
        id="matplotlib.axis_1-5"
        transform="matrix(0.35277778,0,0,0.35277778,180.61725,25.831178)" />
@@ -3812,28 +3812,28 @@
     </g>
     <text
        xml:space="preserve"
-       transform="matrix(0.29042615,0,0,0.29042615,248.79666,116.88701)"
+       transform="matrix(0.29042615,0,0,0.29042615,248.77437,118.68055)"
        id="text55705"
-       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:18.6667px;font-family:AnjaliOldLipi;-inkscape-font-specification:AnjaliOldLipi;text-align:center;white-space:pre;shape-inside:url(#rect55707);fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.755906;stroke-linecap:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:17.0057px;font-family:sans-serif;-inkscape-font-specification:sans-serif;text-align:center;white-space:pre;shape-inside:url(#rect55707);fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.755906;stroke-linecap:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
        x="25.735073"
        y="0"><tspan
-         x="-167.80278"
-         y="-158.44528"
-         id="tspan10853"><tspan
-           style="font-weight:bold;font-family:sans-serif;-inkscape-font-specification:'sans-serif Bold';stroke-linecap:butt"
-           id="tspan10851">Train
+         x="-162.11865"
+         y="-159.91488"
+         id="tspan71248"><tspan
+           style="stroke-linecap:butt"
+           id="tspan71246">Train
 </tspan></tspan><tspan
-         x="-172.11399"
-         y="-132.09689"
-         id="tspan10857"><tspan
-           style="font-weight:bold;font-family:sans-serif;-inkscape-font-specification:'sans-serif Bold';stroke-linecap:butt"
-           id="tspan10855">space
+         x="-166.6607"
+         y="-138.65775"
+         id="tspan71252"><tspan
+           style="stroke-linecap:butt"
+           id="tspan71250">space
 </tspan></tspan><tspan
-         x="-178.29369"
-         y="-105.7485"
-         id="tspan10861"><tspan
-           style="font-weight:bold;font-family:sans-serif;-inkscape-font-specification:'sans-serif Bold';stroke-linecap:butt"
-           id="tspan10859">groups</tspan></tspan></text>
+         x="-170.84155"
+         y="-117.40063"
+         id="tspan71256"><tspan
+           style="stroke-linecap:butt"
+           id="tspan71254">groups</tspan></tspan></text>
     <g
        id="patch_30-9"
        transform="matrix(0.42686111,0,0,0.42686111,102.65544,133.69433)" />
@@ -4596,64 +4596,64 @@
     </g>
     <text
        xml:space="preserve"
-       transform="matrix(0.29042615,0,0,0.29042615,248.33206,232.60311)"
+       transform="matrix(0.29042615,0,0,0.29042615,248.30977,234.40407)"
        id="text59569"
-       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:18.6667px;font-family:AnjaliOldLipi;-inkscape-font-specification:AnjaliOldLipi;text-align:center;white-space:pre;shape-inside:url(#rect59571);fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.755906;stroke-linecap:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:17.0057px;font-family:sans-serif;-inkscape-font-specification:sans-serif;text-align:center;white-space:pre;shape-inside:url(#rect59571);fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.755906;stroke-linecap:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
        x="25.735073"
        y="0"><tspan
-         x="-163.19079"
-         y="-158.44528"
-         id="tspan10865"><tspan
-           style="font-weight:bold;font-family:sans-serif;-inkscape-font-specification:'sans-serif Bold';stroke-linecap:butt"
-           id="tspan10863">Test
+         x="-158.46093"
+         y="-159.91488"
+         id="tspan71260"><tspan
+           style="stroke-linecap:butt"
+           id="tspan71258">Test
 </tspan></tspan><tspan
-         x="-172.11399"
-         y="-132.09689"
-         id="tspan10869"><tspan
-           style="font-weight:bold;font-family:sans-serif;-inkscape-font-specification:'sans-serif Bold';stroke-linecap:butt"
-           id="tspan10867">space
+         x="-166.6607"
+         y="-138.65775"
+         id="tspan71264"><tspan
+           style="stroke-linecap:butt"
+           id="tspan71262">space
 </tspan></tspan><tspan
-         x="-178.29369"
-         y="-105.7485"
-         id="tspan10873"><tspan
-           style="font-weight:bold;font-family:sans-serif;-inkscape-font-specification:'sans-serif Bold';stroke-linecap:butt"
-           id="tspan10871">groups</tspan></tspan></text>
+         x="-170.84155"
+         y="-117.40063"
+         id="tspan71268"><tspan
+           style="stroke-linecap:butt"
+           id="tspan71266">groups</tspan></tspan></text>
     <text
        xml:space="preserve"
        transform="matrix(0.29042615,0,0,0.29042615,110.83874,314.46885)"
        id="text59682"
-       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:18.6667px;font-family:AnjaliOldLipi;-inkscape-font-specification:AnjaliOldLipi;text-align:center;white-space:pre;shape-inside:url(#rect59684);fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.755906;stroke-linecap:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:17.00566182px;font-family:sans-serif;-inkscape-font-specification:sans-serif;text-align:center;white-space:pre;shape-inside:url(#rect59684);fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.755906;stroke-linecap:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
        x="25.735073"
        y="0"><tspan
-         x="-209.91267"
-         y="-158.44528"
-         id="tspan10877"><tspan
-           style="font-weight:bold;font-family:sans-serif;-inkscape-font-specification:'sans-serif Bold';stroke-linecap:butt"
-           id="tspan10875">Ionic conductivity (S/cm)</tspan></tspan></text>
+         x="-184.87548"
+         y="-159.91491"
+         id="tspan71272"><tspan
+           style="stroke-linecap:butt"
+           id="tspan71270">Ionic conductivity (S/cm)</tspan></tspan></text>
     <text
        xml:space="preserve"
        transform="matrix(0,-0.29042615,0.29042615,0,76.051278,177.53425)"
        id="text62676"
-       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:18.6667px;font-family:AnjaliOldLipi;-inkscape-font-specification:AnjaliOldLipi;text-align:center;white-space:pre;shape-inside:url(#rect62678);fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.755906;stroke-linecap:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:17.00566182px;font-family:sans-serif;-inkscape-font-specification:sans-serif;text-align:center;white-space:pre;shape-inside:url(#rect62678);fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.755906;stroke-linecap:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
        x="25.735073"
        y="0"><tspan
-         x="-199.24403"
-         y="-158.44528"
-         id="tspan10881"><tspan
-           style="font-weight:bold;font-family:sans-serif;-inkscape-font-specification:'sans-serif Bold';stroke-linecap:butt"
-           id="tspan10879">Number of test entries</tspan></tspan></text>
+         x="-175.5589"
+         y="-159.91491"
+         id="tspan71276"><tspan
+           style="stroke-linecap:butt"
+           id="tspan71274">Number of test entries</tspan></tspan></text>
     <text
        xml:space="preserve"
        transform="matrix(0,-0.29042615,0.29042615,0,76.051278,62.160158)"
        id="text64132"
-       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:18.6667px;font-family:AnjaliOldLipi;-inkscape-font-specification:AnjaliOldLipi;text-align:center;white-space:pre;shape-inside:url(#rect64134);fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.755906;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:17.00566182px;font-family:sans-serif;-inkscape-font-specification:sans-serif;text-align:center;white-space:pre;shape-inside:url(#rect64134);fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.755906;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
        x="25.735073"
        y="0"><tspan
-         x="-203.64183"
-         y="-158.44528"
-         id="tspan10885"><tspan
-           style="font-weight:bold;font-family:sans-serif;-inkscape-font-specification:'sans-serif Bold';stroke-linecap:butt"
-           id="tspan10883">Number of train entries</tspan></tspan></text>
+         x="-179.02148"
+         y="-159.91491"
+         id="tspan71280"><tspan
+           style="stroke-linecap:butt"
+           id="tspan71278">Number of train entries</tspan></tspan></text>
     <g
        id="g105953"
        transform="translate(342.28343,-13.231033)">
@@ -5300,11 +5300,11 @@
        xml:space="preserve"
        transform="matrix(0.1306796,0,0,0.1306796,199.68402,43.973966)"
        id="text131548"
-       style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:37.3333px;font-family:sans-serif;-inkscape-font-specification:'sans-serif Bold';text-align:center;white-space:pre;shape-inside:url(#rect131550);fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.755906;stroke-linecap:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"><tspan
-         x="-1024.7942"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:37.3333px;font-family:sans-serif;-inkscape-font-specification:sans-serif;text-align:center;white-space:pre;shape-inside:url(#rect131550);fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.755906;stroke-linecap:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"><tspan
+         x="-1020.6745"
          y="-15.710966"
-         id="tspan10889"><tspan
+         id="tspan71284"><tspan
            style="stroke-linecap:butt"
-           id="tspan10887">CIF</tspan></tspan></text>
+           id="tspan71282">CIF</tspan></tspan></text>
   </g>
 </svg>

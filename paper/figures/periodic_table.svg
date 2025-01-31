@@ -8848,454 +8848,452 @@
   <g
      id="axes_180" />
   <g
-     id="axes_181">
+     id="patch_242">
+    <path
+       d="m 179.15976,112.19976 h 408.24 v -27 h -408.24 z"
+       style="fill:#ffffff"
+       id="path2806" />
+  </g>
+  <image
+     xlink:href="data:image/png;base64, iVBORw0KGgoAAAANSUhEUgAABG4AAABLCAYAAAAh48H8AAAC30lEQVR4nO3YQU7DMBRAwbb3vzKEBRsaLGpZSfRQZ3YtP07jmM27b9u23X74eP74/d3n83f7mf3fZ66Znnlxr6l1R79v5hlW7n3Ausv3PmtvLnqmmZmV3ztc56hz/t/e98KZOOt/d2Ymd84vei9nnvPbfu39zODeUzOv1p2ZWbnmqJnVZ3rXvbnq3MysWzsTV73vs/bmzPf9auao/Tzq3qVzPjNzH8w8tr8/z1wzmtl/t79mZmblmtHMyjOM1r1qb1be08y6o5kj3tPou5W9Wd3PI/bmrDM8c6+zzvBopvT/PXOvd92bxf18/L4KAAAAgALhBgAAACBKuAEAAACIEm4AAAAAooQbAAAAgCjhBgAAACBKuAEAAACIEm4AAAAAooQbAAAAgCjhBgAAACBKuAEAAACIEm4AAAAAooQbAAAAgCjhBgAAACBKuAEAAACIEm4AAAAAooQbAAAAgCjhBgAAACBKuAEAAACIEm4AAAAAooQbAAAAgCjhBgAAACBKuAEAAACIEm4AAAAAooQbAAAAgCjhBgAAACBKuAEAAACIEm4AAAAAooQbAAAAgCjhBgAAACBKuAEAAACIEm4AAAAAooQbAAAAgCjhBgAAACBKuAEAAACIEm4AAAAAooQbAAAAgCjhBgAAACBKuAEAAACIEm4AAAAAooQbAAAAgCjhBgAAACBKuAEAAACIEm4AAAAAooQbAAAAgCjhBgAAACBKuAEAAACIEm4AAAAAooQbAAAAgCjhBgAAACBKuAEAAACIEm4AAAAAooQbAAAAgCjhBgAAACBKuAEAAACIEm4AAAAAooQbAAAAgCjhBgAAACBKuAEAAACIEm4AAAAAooQbAAAAgCjhBgAAACBKuAEAAACIEm4AAAAAooQbAAAAgCjhBgAAACBKuAEAAACIEm4AAAAAooQbAAAAgCjhBgAAACBKuAEAAACIEm4AAAAAooQbAAAAgCjhBgAAACDqC+DmADPBxJElAAAAAElFTkSuQmCC"
+     id="image083e0cfa53"
+     transform="scale(1,-1)"
+     x="179.28"
+     y="-111.96"
+     width="408.23999"
+     height="27" />
+  <g
+     id="matplotlib.axis_1">
     <g
-       id="patch_242">
-      <path
-         d="m 179.15976,112.19976 h 408.24 v -27 h -408.24 z"
-         style="fill:#ffffff"
-         id="path2806" />
-    </g>
-    <image
-       xlink:href="data:image/png;base64, iVBORw0KGgoAAAANSUhEUgAABG4AAABLCAYAAAAh48H8AAAC30lEQVR4nO3YQU7DMBRAwbb3vzKEBRsaLGpZSfRQZ3YtP07jmM27b9u23X74eP74/d3n83f7mf3fZ66Znnlxr6l1R79v5hlW7n3Ausv3PmtvLnqmmZmV3ztc56hz/t/e98KZOOt/d2Ymd84vei9nnvPbfu39zODeUzOv1p2ZWbnmqJnVZ3rXvbnq3MysWzsTV73vs/bmzPf9auao/Tzq3qVzPjNzH8w8tr8/z1wzmtl/t79mZmblmtHMyjOM1r1qb1be08y6o5kj3tPou5W9Wd3PI/bmrDM8c6+zzvBopvT/PXOvd92bxf18/L4KAAAAgALhBgAAACBKuAEAAACIEm4AAAAAooQbAAAAgCjhBgAAACBKuAEAAACIEm4AAAAAooQbAAAAgCjhBgAAACBKuAEAAACIEm4AAAAAooQbAAAAgCjhBgAAACBKuAEAAACIEm4AAAAAooQbAAAAgCjhBgAAACBKuAEAAACIEm4AAAAAooQbAAAAgCjhBgAAACBKuAEAAACIEm4AAAAAooQbAAAAgCjhBgAAACBKuAEAAACIEm4AAAAAooQbAAAAgCjhBgAAACBKuAEAAACIEm4AAAAAooQbAAAAgCjhBgAAACBKuAEAAACIEm4AAAAAooQbAAAAgCjhBgAAACBKuAEAAACIEm4AAAAAooQbAAAAgCjhBgAAACBKuAEAAACIEm4AAAAAooQbAAAAgCjhBgAAACBKuAEAAACIEm4AAAAAooQbAAAAgCjhBgAAACBKuAEAAACIEm4AAAAAooQbAAAAgCjhBgAAACBKuAEAAACIEm4AAAAAooQbAAAAgCjhBgAAACBKuAEAAACIEm4AAAAAooQbAAAAgCjhBgAAACBKuAEAAACIEm4AAAAAooQbAAAAgCjhBgAAACBKuAEAAACIEm4AAAAAooQbAAAAgCjhBgAAACBKuAEAAACIEm4AAAAAooQbAAAAgCjhBgAAACDqC+DmADPBxJElAAAAAElFTkSuQmCC"
-       id="image083e0cfa53"
-       transform="matrix(1,0,0,-1,0,27)"
-       x="179.28"
-       y="-84.959999"
-       width="408.23999"
-       height="27" />
-    <g
-       id="matplotlib.axis_1">
+       id="xtick_1">
       <g
-         id="xtick_1">
-        <g
-           id="line2d_1">
-          <defs
-             id="defs2811">
-            <path
-               id="m74c5597d76"
-               d="M 0,0 V 3.5"
-               style="stroke:#000000;stroke-width:0.8" />
-          </defs>
-          <g
-             id="g2815">
-            <use
-               xlink:href="#m74c5597d76"
-               x="260.26163"
-               y="112.19976"
-               style="stroke:#000000;stroke-width:0.8"
-               id="use2813"
-               width="100%"
-               height="100%" />
-          </g>
-        </g>
-        <g
-           id="text_241">
-          <!-- 20 -->
-          <g
-             transform="matrix(0.16,0,0,-0.16,252.45763,130.26935)"
-             id="g2822">
-            <use
-               xlink:href="#CMSS17-32"
-               transform="scale(0.996264)"
-               id="use2818"
-               x="0"
-               y="0"
-               width="100%"
-               height="100%" />
-            <use
-               xlink:href="#CMSS17-30"
-               transform="matrix(0.996264,0,0,0.996264,46.843624,0)"
-               id="use2820"
-               x="0"
-               y="0"
-               width="100%"
-               height="100%" />
-          </g>
-        </g>
-      </g>
-      <g
-         id="xtick_2">
-        <g
-           id="line2d_2">
-          <g
-             id="g2828">
-            <use
-               xlink:href="#m74c5597d76"
-               x="342.04614"
-               y="112.19976"
-               style="stroke:#000000;stroke-width:0.8"
-               id="use2826"
-               width="100%"
-               height="100%" />
-          </g>
-        </g>
-        <g
-           id="text_242">
-          <!-- 40 -->
-          <g
-             transform="matrix(0.16,0,0,-0.16,334.24217,130.26935)"
-             id="g2835">
-            <use
-               xlink:href="#CMSS17-34"
-               transform="scale(0.996264)"
-               id="use2831"
-               x="0"
-               y="0"
-               width="100%"
-               height="100%" />
-            <use
-               xlink:href="#CMSS17-30"
-               transform="matrix(0.996264,0,0,0.996264,46.843624,0)"
-               id="use2833"
-               x="0"
-               y="0"
-               width="100%"
-               height="100%" />
-          </g>
-        </g>
-      </g>
-      <g
-         id="xtick_3">
-        <g
-           id="line2d_3">
-          <g
-             id="g2841">
-            <use
-               xlink:href="#m74c5597d76"
-               x="423.83069"
-               y="112.19976"
-               style="stroke:#000000;stroke-width:0.8"
-               id="use2839"
-               width="100%"
-               height="100%" />
-          </g>
-        </g>
-        <g
-           id="text_243">
-          <!-- 60 -->
-          <g
-             transform="matrix(0.16,0,0,-0.16,416.0267,130.26935)"
-             id="g2848">
-            <use
-               xlink:href="#CMSS17-36"
-               transform="scale(0.996264)"
-               id="use2844"
-               x="0"
-               y="0"
-               width="100%"
-               height="100%" />
-            <use
-               xlink:href="#CMSS17-30"
-               transform="matrix(0.996264,0,0,0.996264,46.843624,0)"
-               id="use2846"
-               x="0"
-               y="0"
-               width="100%"
-               height="100%" />
-          </g>
-        </g>
-      </g>
-      <g
-         id="xtick_4">
-        <g
-           id="line2d_4">
-          <g
-             id="g2854">
-            <use
-               xlink:href="#m74c5597d76"
-               x="505.61523"
-               y="112.19976"
-               style="stroke:#000000;stroke-width:0.8"
-               id="use2852"
-               width="100%"
-               height="100%" />
-          </g>
-        </g>
-        <g
-           id="text_244">
-          <!-- 80 -->
-          <g
-             transform="matrix(0.16,0,0,-0.16,497.81124,130.26935)"
-             id="g2861">
-            <use
-               xlink:href="#CMSS17-38"
-               transform="scale(0.996264)"
-               id="use2857"
-               x="0"
-               y="0"
-               width="100%"
-               height="100%" />
-            <use
-               xlink:href="#CMSS17-30"
-               transform="matrix(0.996264,0,0,0.996264,46.843624,0)"
-               id="use2859"
-               x="0"
-               y="0"
-               width="100%"
-               height="100%" />
-          </g>
-        </g>
-      </g>
-      <g
-         id="xtick_5">
-        <g
-           id="line2d_5">
-          <g
-             id="g2867">
-            <use
-               xlink:href="#m74c5597d76"
-               x="587.39978"
-               y="112.19976"
-               style="stroke:#000000;stroke-width:0.8"
-               id="use2865"
-               width="100%"
-               height="100%" />
-          </g>
-        </g>
-        <g
-           id="text_245">
-          <!-- 100 -->
-          <g
-             transform="matrix(0.16,0,0,-0.16,575.69378,130.26935)"
-             id="g2876">
-            <use
-               xlink:href="#CMSS17-31"
-               transform="scale(0.996264)"
-               id="use2870"
-               x="0"
-               y="0"
-               width="100%"
-               height="100%" />
-            <use
-               xlink:href="#CMSS17-30"
-               transform="matrix(0.996264,0,0,0.996264,46.843624,0)"
-               id="use2872"
-               x="0"
-               y="0"
-               width="100%"
-               height="100%" />
-            <use
-               xlink:href="#CMSS17-30"
-               transform="matrix(0.996264,0,0,0.996264,93.687247,0)"
-               id="use2874"
-               x="0"
-               y="0"
-               width="100%"
-               height="100%" />
-          </g>
-        </g>
-      </g>
-    </g>
-    <g
-       id="matplotlib.axis_2" />
-    <g
-       id="LineCollection_1" />
-    <g
-       id="patch_243">
-      <path
-         d="m 179.15976,112.19976 v -13.5 -13.5 h 408.24 v 13.5 13.5 z"
-         style="fill:none;stroke:#000000;stroke-width:0.8;stroke-linecap:square;stroke-linejoin:miter"
-         id="path2883" />
-    </g>
-    <g
-       id="text_246">
-      <!-- Prevalence in dataset (\%) -->
-      <g
-         transform="matrix(0.16,0,0,-0.16,298.85837,75.19976)"
-         id="g2935">
+         id="line2d_1">
         <defs
-           id="defs2889">
+           id="defs2811">
           <path
-             id="CMSS17-28"
-             d="M 1613,4768 C 1267,4417 474,3601 474,1588 c 0,-2021 793,-2831 1139,-3188 h 390 C 1216,-784 960,357 960,1581 c 0,1217 243,2365 1043,3187 z"
-             transform="scale(0.015625)" />
-          <path
-             id="CMSS17-25"
-             d="m 3923,4583 c 39,64 39,96 39,102 0,70 -58,115 -109,115 -71,0 -103,-51 -135,-115 L 1101,-104 c -13,-25 -39,-63 -39,-102 0,-70 58,-114 116,-114 57,0 70,25 121,114 z M 4678,959 c 0,739 -396,1281 -832,1281 -428,0 -838,-529 -838,-1281 0,-751 410,-1279 838,-1279 442,0 832,541 832,1279 z M 3846,68 c -134,0 -352,121 -352,891 0,765 218,892 352,892 237,0 365,-465 365,-892 C 4211,533 4083,68 3846,68 Z M 2003,3519 c 0,739 -397,1281 -832,1281 -429,0 -838,-529 -838,-1281 0,-751 409,-1279 838,-1279 442,0 832,541 832,1279 z m -832,-891 c -134,0 -352,121 -352,891 0,765 218,892 352,892 237,0 365,-465 365,-892 0,-426 -128,-891 -365,-891 z"
-             transform="scale(0.015625)" />
-          <path
-             id="CMSS17-29"
-             d="m 723,-1600 c 346,351 1139,1167 1139,3181 0,2020 -793,2830 -1139,3187 H 333 C 1120,3952 1376,2811 1376,1588 1376,370 1133,-778 333,-1600 Z"
-             transform="scale(0.015625)" />
+             id="m74c5597d76"
+             d="M 0,0 V 3.5"
+             style="stroke:#000000;stroke-width:0.8" />
         </defs>
-        <use
-           xlink:href="#CMSS17-50"
-           transform="scale(0.996264)"
-           id="use2891"
-           x="0"
-           y="0"
-           width="100%"
-           height="100%" />
-        <use
-           xlink:href="#CMSS17-72"
-           transform="matrix(0.996264,0,0,0.996264,59.735586,0)"
-           id="use2893"
-           x="0"
-           y="0"
-           width="100%"
-           height="100%" />
-        <use
-           xlink:href="#CMSS17-65"
-           transform="matrix(0.996264,0,0,0.996264,91.645359,0)"
-           id="use2895"
-           x="0"
-           y="0"
-           width="100%"
-           height="100%" />
-        <use
-           xlink:href="#CMSS17-76"
-           transform="matrix(0.996264,0,0,0.996264,133.28418,0)"
-           id="use2897"
-           x="0"
-           y="0"
-           width="100%"
-           height="100%" />
-        <use
-           xlink:href="#CMSS17-61"
-           transform="matrix(0.996264,0,0,0.996264,176.28432,0)"
-           id="use2899"
-           x="0"
-           y="0"
-           width="100%"
-           height="100%" />
-        <use
-           xlink:href="#CMSS17-6c"
-           transform="matrix(0.996264,0,0,0.996264,221.20624,0)"
-           id="use2901"
-           x="0"
-           y="0"
-           width="100%"
-           height="100%" />
-        <use
-           xlink:href="#CMSS17-65"
-           transform="matrix(0.996264,0,0,0.996264,243.38697,0)"
-           id="use2903"
-           x="0"
-           y="0"
-           width="100%"
-           height="100%" />
-        <use
-           xlink:href="#CMSS17-6e"
-           transform="matrix(0.996264,0,0,0.996264,285.02579,0)"
-           id="use2905"
-           x="0"
-           y="0"
-           width="100%"
-           height="100%" />
-        <use
-           xlink:href="#CMSS17-63"
-           transform="matrix(0.996264,0,0,0.996264,333.23073,0)"
-           id="use2907"
-           x="0"
-           y="0"
-           width="100%"
-           height="100%" />
-        <use
-           xlink:href="#CMSS17-65"
-           transform="matrix(0.996264,0,0,0.996264,374.86955,0)"
-           id="use2909"
-           x="0"
-           y="0"
-           width="100%"
-           height="100%" />
-        <use
-           xlink:href="#CMSS17-69"
-           transform="matrix(0.996264,0,0,0.996264,447.73749,0)"
-           id="use2911"
-           x="0"
-           y="0"
-           width="100%"
-           height="100%" />
-        <use
-           xlink:href="#CMSS17-6e"
-           transform="matrix(0.996264,0,0,0.996264,469.91821,0)"
-           id="use2913"
-           x="0"
-           y="0"
-           width="100%"
-           height="100%" />
-        <use
-           xlink:href="#CMSS17-64"
-           transform="matrix(0.996264,0,0,0.996264,549.35227,0)"
-           id="use2915"
-           x="0"
-           y="0"
-           width="100%"
-           height="100%" />
-        <use
-           xlink:href="#CMSS17-61"
-           transform="matrix(0.996264,0,0,0.996264,597.55721,0)"
-           id="use2917"
-           x="0"
-           y="0"
-           width="100%"
-           height="100%" />
-        <use
-           xlink:href="#CMSS17-74"
-           transform="matrix(0.996264,0,0,0.996264,642.47913,0)"
-           id="use2919"
-           x="0"
-           y="0"
-           width="100%"
-           height="100%" />
-        <use
-           xlink:href="#CMSS17-61"
-           transform="matrix(0.996264,0,0,0.996264,676.3107,0)"
-           id="use2921"
-           x="0"
-           y="0"
-           width="100%"
-           height="100%" />
-        <use
-           xlink:href="#CMSS17-73"
-           transform="matrix(0.996264,0,0,0.996264,721.23262,0)"
-           id="use2923"
-           x="0"
-           y="0"
-           width="100%"
-           height="100%" />
-        <use
-           xlink:href="#CMSS17-65"
-           transform="matrix(0.996264,0,0,0.996264,757.14616,0)"
-           id="use2925"
-           x="0"
-           y="0"
-           width="100%"
-           height="100%" />
-        <use
-           xlink:href="#CMSS17-74"
-           transform="matrix(0.996264,0,0,0.996264,798.78498,0)"
-           id="use2927"
-           x="0"
-           y="0"
-           width="100%"
-           height="100%" />
-        <use
-           xlink:href="#CMSS17-28"
-           transform="matrix(0.996264,0,0,0.996264,863.84566,0)"
-           id="use2929"
-           x="0"
-           y="0"
-           width="100%"
-           height="100%" />
-        <use
-           xlink:href="#CMSS17-25"
-           transform="matrix(0.996264,0,0,0.996264,900.27958,0)"
-           id="use2931"
-           x="0"
-           y="0"
-           width="100%"
-           height="100%" />
-        <use
-           xlink:href="#CMSS17-29"
-           transform="matrix(0.996264,0,0,0.996264,978.35231,0)"
-           id="use2933"
-           x="0"
-           y="0"
-           width="100%"
-           height="100%" />
+        <g
+           id="g2815">
+          <use
+             xlink:href="#m74c5597d76"
+             x="260.26163"
+             y="112.19976"
+             style="stroke:#000000;stroke-width:0.8"
+             id="use2813"
+             width="100%"
+             height="100%" />
+        </g>
       </g>
+      <g
+         id="text_241">
+        <!-- 20 -->
+        <g
+           transform="matrix(0.16,0,0,-0.16,252.45763,130.26935)"
+           id="g2822">
+          <use
+             xlink:href="#CMSS17-32"
+             transform="scale(0.996264)"
+             id="use2818"
+             x="0"
+             y="0"
+             width="100%"
+             height="100%" />
+          <use
+             xlink:href="#CMSS17-30"
+             transform="matrix(0.996264,0,0,0.996264,46.843624,0)"
+             id="use2820"
+             x="0"
+             y="0"
+             width="100%"
+             height="100%" />
+        </g>
+      </g>
+    </g>
+    <g
+       id="xtick_2">
+      <g
+         id="line2d_2">
+        <g
+           id="g2828">
+          <use
+             xlink:href="#m74c5597d76"
+             x="342.04614"
+             y="112.19976"
+             style="stroke:#000000;stroke-width:0.8"
+             id="use2826"
+             width="100%"
+             height="100%" />
+        </g>
+      </g>
+      <g
+         id="text_242">
+        <!-- 40 -->
+        <g
+           transform="matrix(0.16,0,0,-0.16,334.24217,130.26935)"
+           id="g2835">
+          <use
+             xlink:href="#CMSS17-34"
+             transform="scale(0.996264)"
+             id="use2831"
+             x="0"
+             y="0"
+             width="100%"
+             height="100%" />
+          <use
+             xlink:href="#CMSS17-30"
+             transform="matrix(0.996264,0,0,0.996264,46.843624,0)"
+             id="use2833"
+             x="0"
+             y="0"
+             width="100%"
+             height="100%" />
+        </g>
+      </g>
+    </g>
+    <g
+       id="xtick_3">
+      <g
+         id="line2d_3">
+        <g
+           id="g2841">
+          <use
+             xlink:href="#m74c5597d76"
+             x="423.83069"
+             y="112.19976"
+             style="stroke:#000000;stroke-width:0.8"
+             id="use2839"
+             width="100%"
+             height="100%" />
+        </g>
+      </g>
+      <g
+         id="text_243">
+        <!-- 60 -->
+        <g
+           transform="matrix(0.16,0,0,-0.16,416.0267,130.26935)"
+           id="g2848">
+          <use
+             xlink:href="#CMSS17-36"
+             transform="scale(0.996264)"
+             id="use2844"
+             x="0"
+             y="0"
+             width="100%"
+             height="100%" />
+          <use
+             xlink:href="#CMSS17-30"
+             transform="matrix(0.996264,0,0,0.996264,46.843624,0)"
+             id="use2846"
+             x="0"
+             y="0"
+             width="100%"
+             height="100%" />
+        </g>
+      </g>
+    </g>
+    <g
+       id="xtick_4">
+      <g
+         id="line2d_4">
+        <g
+           id="g2854">
+          <use
+             xlink:href="#m74c5597d76"
+             x="505.61523"
+             y="112.19976"
+             style="stroke:#000000;stroke-width:0.8"
+             id="use2852"
+             width="100%"
+             height="100%" />
+        </g>
+      </g>
+      <g
+         id="text_244">
+        <!-- 80 -->
+        <g
+           transform="matrix(0.16,0,0,-0.16,497.81124,130.26935)"
+           id="g2861">
+          <use
+             xlink:href="#CMSS17-38"
+             transform="scale(0.996264)"
+             id="use2857"
+             x="0"
+             y="0"
+             width="100%"
+             height="100%" />
+          <use
+             xlink:href="#CMSS17-30"
+             transform="matrix(0.996264,0,0,0.996264,46.843624,0)"
+             id="use2859"
+             x="0"
+             y="0"
+             width="100%"
+             height="100%" />
+        </g>
+      </g>
+    </g>
+    <g
+       id="xtick_5">
+      <g
+         id="line2d_5">
+        <g
+           id="g2867">
+          <use
+             xlink:href="#m74c5597d76"
+             x="587.39978"
+             y="112.19976"
+             style="stroke:#000000;stroke-width:0.8"
+             id="use2865"
+             width="100%"
+             height="100%" />
+        </g>
+      </g>
+      <g
+         id="text_245">
+        <!-- 100 -->
+        <g
+           transform="matrix(0.16,0,0,-0.16,575.69378,130.26935)"
+           id="g2876">
+          <use
+             xlink:href="#CMSS17-31"
+             transform="scale(0.996264)"
+             id="use2870"
+             x="0"
+             y="0"
+             width="100%"
+             height="100%" />
+          <use
+             xlink:href="#CMSS17-30"
+             transform="matrix(0.996264,0,0,0.996264,46.843624,0)"
+             id="use2872"
+             x="0"
+             y="0"
+             width="100%"
+             height="100%" />
+          <use
+             xlink:href="#CMSS17-30"
+             transform="matrix(0.996264,0,0,0.996264,93.687247,0)"
+             id="use2874"
+             x="0"
+             y="0"
+             width="100%"
+             height="100%" />
+        </g>
+      </g>
+    </g>
+  </g>
+  <g
+     id="matplotlib.axis_2" />
+  <g
+     id="LineCollection_1" />
+  <g
+     id="patch_243">
+    <path
+       d="m 179.15976,112.19976 v -13.5 -13.5 h 408.24 v 13.5 13.5 z"
+       style="fill:none;stroke:#000000;stroke-width:0.8;stroke-linecap:square;stroke-linejoin:miter"
+       id="path2883" />
+  </g>
+  <g
+     id="text_246"
+     transform="matrix(1.4029292,0,0,1.4029292,-149.93083,-28.694481)">
+    <!-- Prevalence in dataset (\%) -->
+    <g
+       transform="matrix(0.16,0,0,-0.16,298.85837,75.19976)"
+       id="g2935">
+      <defs
+         id="defs2889">
+        <path
+           id="CMSS17-28"
+           d="M 1613,4768 C 1267,4417 474,3601 474,1588 c 0,-2021 793,-2831 1139,-3188 h 390 C 1216,-784 960,357 960,1581 c 0,1217 243,2365 1043,3187 z"
+           transform="scale(0.015625)" />
+        <path
+           id="CMSS17-25"
+           d="m 3923,4583 c 39,64 39,96 39,102 0,70 -58,115 -109,115 -71,0 -103,-51 -135,-115 L 1101,-104 c -13,-25 -39,-63 -39,-102 0,-70 58,-114 116,-114 57,0 70,25 121,114 z M 4678,959 c 0,739 -396,1281 -832,1281 -428,0 -838,-529 -838,-1281 0,-751 410,-1279 838,-1279 442,0 832,541 832,1279 z M 3846,68 c -134,0 -352,121 -352,891 0,765 218,892 352,892 237,0 365,-465 365,-892 C 4211,533 4083,68 3846,68 Z M 2003,3519 c 0,739 -397,1281 -832,1281 -429,0 -838,-529 -838,-1281 0,-751 409,-1279 838,-1279 442,0 832,541 832,1279 z m -832,-891 c -134,0 -352,121 -352,891 0,765 218,892 352,892 237,0 365,-465 365,-892 0,-426 -128,-891 -365,-891 z"
+           transform="scale(0.015625)" />
+        <path
+           id="CMSS17-29"
+           d="m 723,-1600 c 346,351 1139,1167 1139,3181 0,2020 -793,2830 -1139,3187 H 333 C 1120,3952 1376,2811 1376,1588 1376,370 1133,-778 333,-1600 Z"
+           transform="scale(0.015625)" />
+      </defs>
+      <use
+         xlink:href="#CMSS17-50"
+         transform="scale(0.996264)"
+         id="use2891"
+         x="0"
+         y="0"
+         width="100%"
+         height="100%" />
+      <use
+         xlink:href="#CMSS17-72"
+         transform="matrix(0.996264,0,0,0.996264,59.735586,0)"
+         id="use2893"
+         x="0"
+         y="0"
+         width="100%"
+         height="100%" />
+      <use
+         xlink:href="#CMSS17-65"
+         transform="matrix(0.996264,0,0,0.996264,91.645359,0)"
+         id="use2895"
+         x="0"
+         y="0"
+         width="100%"
+         height="100%" />
+      <use
+         xlink:href="#CMSS17-76"
+         transform="matrix(0.996264,0,0,0.996264,133.28418,0)"
+         id="use2897"
+         x="0"
+         y="0"
+         width="100%"
+         height="100%" />
+      <use
+         xlink:href="#CMSS17-61"
+         transform="matrix(0.996264,0,0,0.996264,176.28432,0)"
+         id="use2899"
+         x="0"
+         y="0"
+         width="100%"
+         height="100%" />
+      <use
+         xlink:href="#CMSS17-6c"
+         transform="matrix(0.996264,0,0,0.996264,221.20624,0)"
+         id="use2901"
+         x="0"
+         y="0"
+         width="100%"
+         height="100%" />
+      <use
+         xlink:href="#CMSS17-65"
+         transform="matrix(0.996264,0,0,0.996264,243.38697,0)"
+         id="use2903"
+         x="0"
+         y="0"
+         width="100%"
+         height="100%" />
+      <use
+         xlink:href="#CMSS17-6e"
+         transform="matrix(0.996264,0,0,0.996264,285.02579,0)"
+         id="use2905"
+         x="0"
+         y="0"
+         width="100%"
+         height="100%" />
+      <use
+         xlink:href="#CMSS17-63"
+         transform="matrix(0.996264,0,0,0.996264,333.23073,0)"
+         id="use2907"
+         x="0"
+         y="0"
+         width="100%"
+         height="100%" />
+      <use
+         xlink:href="#CMSS17-65"
+         transform="matrix(0.996264,0,0,0.996264,374.86955,0)"
+         id="use2909"
+         x="0"
+         y="0"
+         width="100%"
+         height="100%" />
+      <use
+         xlink:href="#CMSS17-69"
+         transform="matrix(0.996264,0,0,0.996264,447.73749,0)"
+         id="use2911"
+         x="0"
+         y="0"
+         width="100%"
+         height="100%" />
+      <use
+         xlink:href="#CMSS17-6e"
+         transform="matrix(0.996264,0,0,0.996264,469.91821,0)"
+         id="use2913"
+         x="0"
+         y="0"
+         width="100%"
+         height="100%" />
+      <use
+         xlink:href="#CMSS17-64"
+         transform="matrix(0.996264,0,0,0.996264,549.35227,0)"
+         id="use2915"
+         x="0"
+         y="0"
+         width="100%"
+         height="100%" />
+      <use
+         xlink:href="#CMSS17-61"
+         transform="matrix(0.996264,0,0,0.996264,597.55721,0)"
+         id="use2917"
+         x="0"
+         y="0"
+         width="100%"
+         height="100%" />
+      <use
+         xlink:href="#CMSS17-74"
+         transform="matrix(0.996264,0,0,0.996264,642.47913,0)"
+         id="use2919"
+         x="0"
+         y="0"
+         width="100%"
+         height="100%" />
+      <use
+         xlink:href="#CMSS17-61"
+         transform="matrix(0.996264,0,0,0.996264,676.3107,0)"
+         id="use2921"
+         x="0"
+         y="0"
+         width="100%"
+         height="100%" />
+      <use
+         xlink:href="#CMSS17-73"
+         transform="matrix(0.996264,0,0,0.996264,721.23262,0)"
+         id="use2923"
+         x="0"
+         y="0"
+         width="100%"
+         height="100%" />
+      <use
+         xlink:href="#CMSS17-65"
+         transform="matrix(0.996264,0,0,0.996264,757.14616,0)"
+         id="use2925"
+         x="0"
+         y="0"
+         width="100%"
+         height="100%" />
+      <use
+         xlink:href="#CMSS17-74"
+         transform="matrix(0.996264,0,0,0.996264,798.78498,0)"
+         id="use2927"
+         x="0"
+         y="0"
+         width="100%"
+         height="100%" />
+      <use
+         xlink:href="#CMSS17-28"
+         transform="matrix(0.996264,0,0,0.996264,863.84566,0)"
+         id="use2929"
+         x="0"
+         y="0"
+         width="100%"
+         height="100%" />
+      <use
+         xlink:href="#CMSS17-25"
+         transform="matrix(0.996264,0,0,0.996264,900.27958,0)"
+         id="use2931"
+         x="0"
+         y="0"
+         width="100%"
+         height="100%" />
+      <use
+         xlink:href="#CMSS17-29"
+         transform="matrix(0.996264,0,0,0.996264,978.35231,0)"
+         id="use2933"
+         x="0"
+         y="0"
+         width="100%"
+         height="100%" />
     </g>
   </g>
   <defs
