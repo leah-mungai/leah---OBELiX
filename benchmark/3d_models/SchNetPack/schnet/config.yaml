@@ -7,24 +7,24 @@ runtime_files:
   - "./split.npz"
   - "./test_split.npz"
 
-database_path: '../../../data/processed.csv'
-test_path: '../../../test_idx.csv'
-cif_file_dir: '../../../data/np_cifs'
+database_path: '../../../../data/processed.csv'
+test_path: '../../../../test_idx.csv'
+cif_file_dir: '../../../../data/np_cifs'
 overwrite_db: True
 db_dir: '.'
 extra_plots: True
 show: False
 
 # Data processing parameters
-representation: "painn"
-cutoff: [2]
-n_atom_basis: [10]
-n_interactions: [2]
-batch_size: [32]
-n_train_data: 20
-num_folds: 2
+representation: "schnet"
+cutoff: [2,5,10]
+n_atom_basis: [10, 20, 80]
+n_interactions: [3,2,4]
+batch_size: [32,64]
+n_train_data: 600
+num_folds: 5
 split_reshuffle: False
-n_param_combs: 1
+n_param_combs: 100
 actual_list: [runtime_files]
 
 # CIF file reading parameters
@@ -41,16 +41,17 @@ num_workers: 0
 pin_memory: false
 
 # Trainer configurations
-max_epochs: 2
+max_epochs: 100
 learning_rate: 0.001
-weight_decay: [0]
+weight_decay: [0, 0.01, 0.0001]
+patience: 3
 
 # Logging and checkpoint paths
-out_dir: 'tests'
+out_dir: 'runs'
 
 # Plot settings
 high_dpi: 300
 
 # Metrics settings
 monitor_metric: 'val_loss'
-save_top_k: 1
+save_top_k: 3

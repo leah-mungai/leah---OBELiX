@@ -19,6 +19,7 @@ from copy import deepcopy
 from collections import OrderedDict
 from numpy.random import choice
 from pathlib import Path
+import sys
 
 metrics_df = 0
 
@@ -285,6 +286,13 @@ def train(props, split_file, db_path, config, savedir):
         
     pred_ionic_conductivity = spk.atomistic.Atomwise(n_in=n_atom_basis, output_key='ionic_conductivity', aggregation_mode="avg")
 
+    if ("pretrained_model" in config) and (config["pretrained_model"] is not None):
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        model = torch.load(config["pretrained_model"], map_location=device)
+        rep = model.representation
+        for param in rep.parameters():
+            param.requires_grad = False
+    
     nnpot = spk.model.NeuralNetworkPotential(
         representation=rep,
         input_modules=[pairwise_distance],
@@ -314,9 +322,15 @@ def train(props, split_file, db_path, config, savedir):
     global metrics_df
     metrics_df = pd.DataFrame(columns=["Epoch", "Train Loss", "Val Loss", "Train MAE", "Val MAE"])
 
-    if custom_data.num_val != 0:
+    if len(custom_data.val_idx) != 0:
         print("Using validation callback")
         callbacks = [
+            pl.callbacks.EarlyStopping(
+                monitor=config["monitor_metric"],
+                patience=config["patience"],
+                mode='min',
+                min_delta=0.0,
+            ),
             spk.train.ModelCheckpoint(
                 model_path=savedir + "/best_model.pth",
                 save_top_k=config["save_top_k"],
@@ -329,8 +343,7 @@ def train(props, split_file, db_path, config, savedir):
         callbacks = [
             pl.callbacks.ModelCheckpoint(
                 dirpath = savedir,
-                filename = "/best_model.pth",
-                save_top_k=config["save_top_k"],
+                filename = "best_model",
                 monitor=None
             ),
             MetricTracker(),
@@ -349,10 +362,11 @@ def train(props, split_file, db_path, config, savedir):
     
     return trainer, custom_data
 
-def crossval(props, db_path, train_data, config, rng, savedir):
-    
-    shuffled_ids = rng.permutation(len(props))
-    splits = np.array_split(shuffled_ids, config["num_folds"])
+def crossval(splits, props, db_path, train_data, config, rng, savedir):
+
+    if config["split_reshuffle"]:
+        shuffled_ids = rng.permutation(len(props))
+        splits = np.array_split(shuffled_ids, config["num_folds"])
 
     if config["extra_plots"]:
         plt.figure(savedir)
@@ -363,6 +377,7 @@ def crossval(props, db_path, train_data, config, rng, savedir):
 
     train_maes = []
     val_maes = []
+    epochs = []
     for i in range(config["num_folds"]):
 
         print(f"Working on fold {i}...")
@@ -379,12 +394,15 @@ def crossval(props, db_path, train_data, config, rng, savedir):
         
         trainer, custom_data = train(props, split_file, db_path, config, traindir)
         
+        best_model = torch.load(traindir + "/best_model.pth", map_location=trainer.model.device)
+        
         # Final predictions
-        pred_train, target_train = get_pred_vs_targets(trainer.model, custom_data.train_dataloader())
-        pred_val, target_val = get_pred_vs_targets(trainer.model, custom_data.val_dataloader())
+        pred_train, target_train = get_pred_vs_targets(best_model, custom_data.train_dataloader())
+        pred_val, target_val = get_pred_vs_targets(best_model, custom_data.val_dataloader())
         
         train_maes.append(np.mean(np.abs(pred_train - target_train)))
         val_maes.append(np.mean(np.abs(pred_val - target_val)))
+        epochs.append(trainer.current_epoch + 1)
         
         if config["extra_plots"]:
             plt.figure(savedir)
@@ -406,13 +424,13 @@ def crossval(props, db_path, train_data, config, rng, savedir):
     print(f"Results for {config['num_folds']}-fold cross-validation:")
     print(f"Train MAE: {np.mean(train_maes)} +/- {np.std(train_maes)}")
     print(f"Validation MAE: {np.mean(val_maes)} +/- {np.std(val_maes)}")
+    print(f"Average number of epochs: {np.mean(epochs)} +/- {np.std(epochs)}")
+    
+    pickle.dump((train_maes, val_maes, epochs), open(savedir + "/maes.pkl", 'wb'))
+    
+    return np.mean(val_maes), np.std(val_maes), np.mean(epochs)
 
-    return np.mean(val_maes), np.std(val_maes)
-
-def main():
-
-    with open('config.yaml', 'r') as file:
-        config = yaml.safe_load(file)
+def main(config):
 
     ####### step 1: Set Random Seed
     torch.use_deterministic_algorithms(True)
@@ -442,9 +460,15 @@ def main():
     data = pd.read_csv(config["database_path"], index_col="ID")
     test = pd.read_csv(config["test_path"], index_col="ID")
     train_data = data[~data.index.isin(test.index)]
+    train_data = train_data[train_data["CIF"] != "No Match"]
+    train_data = train_data.iloc[:config["n_train_data"]]
     test_data = data[data.index.isin(test.index)]
+    test_data = test_data[test_data["CIF"] != "No Match"]
     
     possible_configs, param_grid = generate_configs(config)
+
+    shuffled_ids = rng.permutation(len(train_data))
+    splits = np.array_split(shuffled_ids, config["num_folds"])
     
     best_val_mae = np.inf
     maes = []
@@ -457,13 +481,12 @@ def main():
         
         db_path = tmp_config["db_dir"] + "/train.db"
         props = prepare_data(db_path, train_data, tmp_config)
-        props = props[:config["n_train_data"]]
-
+        
         savedir = config["out_dir"] + f"/config_{i}"
         Path(savedir).mkdir(parents=True, exist_ok=True)
 
         try:
-            val_mae, val_std = crossval(props, db_path, train_data, tmp_config, rng, savedir)
+            val_mae, val_std, mean_epochs = crossval(splits, props, db_path, train_data, tmp_config, rng, savedir)
         except torch.OutOfMemoryError:
             val_mae, val_std = np.nan, np.nan
             
@@ -474,11 +497,15 @@ def main():
             best_val_mae = val_mae
             best_val_std = val_std
             best_config = tmp_config
+            best_config["config_id"] = i
+            best_config["max_epochs"] = int(mean_epochs) - config["patience"]
+            
     maes = np.array(maes)
             
     print()
     print("========================================================")
-    print("Best configuration found:")
+    print("Best configuration found:", best_config["config_id"])
+    print(param_grid.iloc[best_config["config_id"]])
     print(f"Validation MAE: {best_val_mae} +/- {best_val_std}")
 
     pickle.dump((param_grid, maes), open(config["out_dir"] + "/maes.pkl", 'wb'))
@@ -495,10 +522,12 @@ def main():
 
     yaml.dump(best_config, open(config["out_dir"] + "/best_config.yaml", 'w'))
 
-    print("Retraining model with best configuration...")
+    print("Retraining model with best configuration...")    
+    db_path = config["db_dir"] + "/train.db"
+    props = prepare_data(db_path, train_data, best_config)
     split_file = config["db_dir"] + "/split.npz"  
     np.savez(split_file, train_idx=np.arange(len(props)), val_idx=[], test_idx=[])
-    trainer, custom_data = train(props, split_file, db_path, best_config, config["out_dir"] + "/final_training") 
+    trainer, custom_data = train(props, split_file, db_path, best_config, config["out_dir"] + "/final_training")
 
     # Final predictions
     pred_train, target_train = get_pred_vs_targets(trainer.model, custom_data.train_dataloader())
@@ -512,13 +541,24 @@ def main():
     np.savez(split_file, train_idx=[], val_idx=[], test_idx=np.arange(len(test_props)))
     test_dataloader = setup_dataloader(test_props, best_config, split_file, test_db_path)
 
-
     # Making sure there is no leakage
     lookup = {int(i,36):i for i in data.index}
     ids = [lookup[int(p["true_id"])] for p in test_props]
     if any([i not in test_data.index for i in ids]):
         breakpoint()
         raise ValueError("Some test IDs not found in test data")
+
+    _, maes, _ = pickle.load(open(config["out_dir"] + "/config_%d/maes.pkl"%(best_config["config_id"]), 'rb'))
+
+    model = torch.load(config["out_dir"] + "/config_%d/fold_%d"%(best_config["config_id"], np.argmin(maes)) + "/best_model.pth", map_location="cpu")
+
+    pred_test, target_test = get_pred_vs_targets(model, test_dataloader.test_dataloader())
+
+    plot_actual_vs_predicted(pred_test, target_test,
+                             pred_test, target_test,
+                             "best fold model vs test", config["out_dir"] + "/target_vs_train_best_fold.svg")
+
+    print("Test MAE with best fold:", np.mean(np.abs(pred_test - target_test)))
     
     pred_test, target_test = get_pred_vs_targets(trainer.model, test_dataloader.test_dataloader())
 
@@ -526,6 +566,8 @@ def main():
                              pred_test, target_test,
                              "final model vs test", config["out_dir"] + "/target_vs_test.svg")
 
+    pickle.dump((pred_test, target_test), open(config["out_dir"] + "/test_results.pkl", 'wb'))
+    
     print("Final model evaluation:")
     print("Final train MAE:", np.mean(np.abs(pred_train - target_train)))
     print("Final test MAE:", np.mean(np.abs(pred_test - target_test)))
@@ -534,4 +576,8 @@ def main():
         plt.show()
 
 if __name__ == '__main__':
-    main()
+
+    with open(sys.argv[1], 'r') as file:
+        config = yaml.safe_load(file)
+
+    main(config)

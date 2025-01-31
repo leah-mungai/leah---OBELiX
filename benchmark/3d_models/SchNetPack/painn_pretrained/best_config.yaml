@@ -1,0 +1,44 @@
+actual_list:
+- runtime_files
+batch_size: 32
+cif_file_dir: ../../../../data/np_cifs
+cif_read_options:
+  fractional_occupancies: true
+  index: -1
+  primitive_cell: false
+  reader: ase
+  store_tags: false
+  subtrans_included: true
+config_id: 87
+cutoff: [5]
+database_path: ../../../../data/processed.csv
+db_dir: .
+extra_plots: true
+high_dpi: 300
+learning_rate: 0.001
+max_epochs: 100
+monitor_metric: val_loss
+n_atom_basis: 128
+n_interactions: 3
+n_param_combs: 100
+n_train_data: 600
+num_folds: 5
+num_workers: 0
+out_dir: runs_best_only
+overwrite_db: true
+pin_memory: false
+representation: painn
+runtime_files:
+- ./splitting.lock
+- ./test.db
+- ./pre-transformed.pkl
+- ./split.npz
+- ./test_split.npz
+save_top_k: 3
+seed: 12
+show: false
+split_reshuffle: false
+test_path: ../../../../test_idx.csv
+weight_decay: 0
+patience: 3
+pretrained_model: ../pretraining/PaiNN/runs/b84ac928-dac6-11ef-a988-70b5e8f00366/best_model
