@@ -3,8 +3,9 @@ seed:
   seed_value: 42  
 
 data:
-  csv_train_file: "filtered_train.csv"  
-  csv_test_file: "filtered_test.csv"    
+  csv_data_file: "../../../data/processed.csv"  
+  csv_test_idx: "../../../data/test_idx.csv"
+  csv_train_idx: "../../../data/train_idx.csv"
   cif_directory: "CGCNN-np"  
   ionic_conductivity_column: "Ionic conductivity (S cm-1)"  
 

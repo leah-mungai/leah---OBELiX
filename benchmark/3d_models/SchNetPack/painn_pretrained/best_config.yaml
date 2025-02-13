@@ -38,7 +38,7 @@ save_top_k: 3
 seed: 12
 show: false
 split_reshuffle: false
-test_path: ../../../../test_idx.csv
+test_path: ../../../../data/test_idx.csv
 weight_decay: 0
 patience: 3
 pretrained_model: ../pretraining/PaiNN/runs/b84ac928-dac6-11ef-a988-70b5e8f00366/best_model

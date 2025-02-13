@@ -1,3 +1,4 @@
+
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -359,7 +360,7 @@ def manual_pie_chart(data):
 if __name__ == "__main__":
 
     data = pd.read_csv('processed.csv', index_col="ID")
-    test = pd.read_csv('../test_idx.csv', index_col="ID")
+    test = pd.read_csv('test_idx.csv', index_col="ID")
     data["in_test"] = data.index.isin(test.index)
 
     # # Similar entries plots

@@ -20,8 +20,8 @@ MODEL_PATH = BASE_PATH / "benchmark"
 cif_only = False
 xy = read_xy(DATA_PATH / "processed.csv")  # , partial=False)
 
-train_idx = [l.strip() for l in open(BASE_PATH / "train_idx.csv")][1:]
-test_idx = [l.strip() for l in open(BASE_PATH / "test_idx.csv")][1:]
+train_idx = [l.strip() for l in open(BASE_PATH / "data/train_idx.csv")][1:]
+test_idx = [l.strip() for l in open(BASE_PATH / "data/test_idx.csv")][1:]
 
 scaler = StandardScaler()
 xy["Ionic conductivity (S cm-1)"] = xy["Ionic conductivity (S cm-1)"].map(np.log10)

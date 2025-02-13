@@ -44,10 +44,11 @@ def set_random_seed(seed):
 
 
 # Load the dataset from CSV and CIF files
-def load_dataset(csv_file, cif_dir, dataset_type, conductivity_column):
+def load_dataset(csv_file, csv_split, cif_dir, dataset_type, conductivity_column):
     """Load datasets from a CSV file and corresponding CIF files."""
     data = pd.read_csv(csv_file)
-    data['ID'] = data['ID'].str.replace(r'^="|"$', '', regex=True)
+    split = pd.read_csv(csv_split, index_col="ID")
+    data = data[data["ID"].isin(split.index)]
     structures = []
     ids = []
     print(f"\nLoading {dataset_type} dataset...")
@@ -724,13 +725,15 @@ if __name__ == "__main__":
 
     # Load training and test datasets
     train_structures, train_ionic_conductivities, train_ids = load_dataset(
-        config['data']['csv_train_file'], 
+        config['data']['csv_data_file'],
+        config['data']['csv_train_idx'],
         config['data']['cif_directory'], 
         "training", 
         config['data']['ionic_conductivity_column']
     )
     test_structures, test_ionic_conductivities, test_ids = load_dataset(
-        config['data']['csv_test_file'], 
+        config['data']['csv_data_file'],
+        config['data']['csv_test_idx'],
         config['data']['cif_directory'], 
         "testing", 
         config['data']['ionic_conductivity_column']

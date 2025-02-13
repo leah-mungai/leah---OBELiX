@@ -4,10 +4,6 @@
 
 - `raw.xlsx`: Raw dataset
 - `processed.csv`: Filtering out only necessary info for training
-knedkwnekdn--test_idx.csv
-knedkwnekdn--train_idx.csv
-
-knedkwnekdn--test_idx.csv
 - `{train,test}_idx.csv`: Lists entry ids part of the train/test splits
 
 ## Directories
