@@ -1,3 +1,14 @@
-# Machine learning to discover ionic conductors
+# OBELiX: An Experimental Ionic Conductivity Dataset
 
-This repository currently contains only the data set (see [data/README.md](https://github.com/alexhernandezgarcia/ionic-conductivity/tree/main/data)), that should not be made publicly available for the time being. Models code is currently developed in [github.com/sh-divya/ActiveLearningMaterials](https://github.com/sh-divya/ActiveLearningMaterials).
+OBELiX (<ins>O</ins>pen solid <ins>B</ins>attery <ins>E</ins>lectrolytes with <ins>Li</ins>: an e<ins>X</ins>perimental dataset) is an dataset of 599 synthesized solid electrolyte materials and their experimentally measured room temperature ionic conductivity along with descriptors of their space group, lattice parameters, and chemical composition. It contains full crystallographic description in the form of CIF files for 321 entries.
+
+## File Download
+| File               | Links   |
+| --------           | ------- |
+| Train Dataset      | [xlsx](url), [csv]()|
+| Train CIF files    | [zip](url), [tar.gz](url)    |
+| Test Dataset       | [xlsx](url), [csv]()|
+| Test CIF files     | [zip](url), [tar.gz](url)    |
+| Full Dataset       | [xlsx](url), [csv]()|
+| All CIF files      | [zip](url), [tar.gz](url)    |
+
