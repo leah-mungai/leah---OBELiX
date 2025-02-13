@@ -9,11 +9,11 @@ from venn import venn
 
 def add_datasets_labels(data):
 
-    laskowski_database = "other/laskowski_semi-fromatted.csv"
-    liion_database = "other/LiIonDatabase.csv"
-    uni_datatbase = "unidentified_with_refs.csv"
-    doi_lookup_table_file = "other/doi_lookup_table.csv"
-    hand_database = "checked_by_hand.csv"
+    laskowski_database = "misc/laskowski_semi-fromatted.csv"
+    liion_database = "misc/LiIonDatabase.csv"
+    uni_datatbase = "misc/unidentified_with_refs.csv"
+    doi_lookup_table_file = "misc/doi_lookup_table.csv"
+    hand_database = "misc/checked_by_hand.csv"
 
     laskowski_data = np.genfromtxt(laskowski_database, delimiter=',', dtype=str)
     doi_lookup_table = dict(np.genfromtxt(doi_lookup_table_file, delimiter=',', dtype=str, skip_header=1))

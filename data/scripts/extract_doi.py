@@ -6,7 +6,7 @@ references = extract_references_from_url('https://www.rsc.org/suppdata/d2/ee/d2e
 
 cr = Crossref()
 
-with open("lookup_table_doi.csv", "w") as f:
+with open("misc/lookup_table_doi.csv", "w") as f:
     print("ref. number,DOI", file=f)
     for ref in references:
         result = cr.works(query = re.findall("[0-9\.]+\s+(.*)",ref["raw_ref"][0])[0])

@@ -4,7 +4,11 @@
 
 - `raw.xlsx`: Raw dataset
 - `processed.csv`: Filtering out only necessary info for training
-- `{train,test}_split.csv`: Lists entries part of the train/test splits
+knedkwnekdn--test_idx.csv
+knedkwnekdn--train_idx.csv
+
+knedkwnekdn--test_idx.csv
+- `{train,test}_idx.csv`: Lists entry ids part of the train/test splits
 
 ## Directories
 - `./rand_cifs`: Cifs with added random noise
@@ -17,6 +21,7 @@
 - `./np_cifs`: Standardized cif files with rounded partial occupancies --> replace with ./rand_np_cifs in scripts
 
 ## Scripts
+All scripts are in the `scripts` directory. They are meant to be run from the `data` directory.
 - `preprocessing.py`: Adds paper information, process data to be compatible with DAVE
 - `compare_xlsx.py`: Script to compare two excel files since the raw dataset is an excel file. Usage: `python compare_xlsx.py OLD_FILE NEW_FILE`
 - `get_mp_entries.py`: script to automatically download similar cifs files from the MP
@@ -24,7 +29,7 @@
 - `analysis.py`: creates figures and stats for the paper
 - `anonymize_cifs.py`: Standardize original cifs
 - `randomize_cifs.py`: Add random noise to atomic positions while preserving symmetry
-- `train_test_split.py`: Script used to create test and train splits. The arguments used to create the official splits are in `other/arguments_split.yaml`
+- `train_test_split.py`: Script used to create test and train splits. The arguments used to create the official splits are in `misc/arguments_split.yaml`
 
 ## Miscellaneous
 

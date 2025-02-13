@@ -139,11 +139,11 @@ def get_paper_from_hand(material, cond, hand_data):
 
 def add_paper_info(database):
 
-    laskowski_database = "other/laskowski_semi-fromatted.csv"
-    liion_database = "other/LiIonDatabase.csv"
-    uni_datatbase = "unidentified_with_refs.csv"
-    doi_lookup_table_file = "other/doi_lookup_table.csv"
-    hand_database = "checked_by_hand.csv"
+    laskowski_database = "misc/laskowski_semi-fromatted.csv"
+    liion_database = "misc/LiIonDatabase.csv"
+    uni_datatbase = "misc/unidentified_with_refs.csv"
+    doi_lookup_table_file = "misc/doi_lookup_table.csv"
+    hand_database = "misc/checked_by_hand.csv"
 
     homin_data = database.to_numpy()
     laskowski_data = np.genfromtxt(laskowski_database, delimiter=',', dtype=str)

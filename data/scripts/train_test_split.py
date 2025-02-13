@@ -5,7 +5,7 @@ of the target variable (IC) in both splits, as well disjoint papers and composit
 Example:
 
     python train_test_split.py \
-            --input data/processed.csv
+            --input processed.csv
             --output split.csv
             --use_log
             --do_plot
