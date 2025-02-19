@@ -1,0 +1,19 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "obelix"
+version = "1.0.0"
+dependencies = ["pandas", "pymatgen", "tqdm"]
+requires-python = ">=3.8"
+maintainers = [
+  {name = "Felix Therrien", email = "felix.therrien@gmail.com"}
+]
+description = "A Curated Dataset of Crystal Structures and Experimentally Measured Ionic Conductivities for Lithium Solid-State Electrolytes"
+readme = "README.md"
+license = "MIT"
+keywords = ["batteries", "solid-state", "dataset", "database", "ionic-conductivity"]
+
+[project.urls]
+Repository = "https://github.com/NRC-Mila/OBELiX"

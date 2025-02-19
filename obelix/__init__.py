@@ -6,16 +6,54 @@ from pymatgen.core import Structure
 import warnings
 from tqdm import tqdm
 
-class OBELiX():
-    def __init__(self, data_path="./data", no_cifs=False):
+__version__ = "1.0.0"
+__commit__ = "2db78ff50c925b2505204f271968e02117b6b19f"
+
+class Dataset():
+    def __init__(self, dataframe):
+        self.dataframe = dataframe
+        self.entries = list(self.dataframe.index)
+        self.labels = list(self.dataframe.keys())
+        
+    def __len__(self):
+        return len(self.dataframe)
+
+    def __getitem__(self, idx):
+
+        if type(idx) == int:
+            entry = self.dataframe.iloc[idx]
+        else:
+            entry = self.dataframe.loc[idx]
+
+        if type(entry) == pd.Series:
+            entry_dict = entry.to_dict()
+            entry_dict["ID"] = entry.name
+        else:
+            entry_dict = entry.to_dict()
+        
+        return entry_dict
+    
+    def to_numpy(self):
+        return self.dataframe.to_numpy()
+
+    def to_dict(self):
+        return self.dataframe.to_dict()
+
+
+class OBELiX(Dataset):
+    def __init__(self, data_path="./rawdata", no_cifs=False, commit_id=__commit__):
         self.data_path = Path(data_path)
         if not self.data_path.exists():
             self.download_data(self.data_path)
 
-        self.dataframe = self.read_data(self.data_path, no_cifs)
+        super().__init__(self.read_data(self.data_path, no_cifs))
 
-        self.index = self.dataframe.index
+        test = pd.read_csv(self.data_path / "test.csv", index_col="ID")
 
+        self.train_dataset = Dataset(self.dataframe[~self.dataframe.index.isin(test.index)])
+        
+        self.test_dataset = Dataset(self.dataframe[self.dataframe.index.isin(test.index)])
+        
     def download_data(self, output_path, commit_id=None):
         print("Downloading data...", end="")
         output_path = Path(output_path)
@@ -68,27 +106,4 @@ class OBELiX():
 
         data["structure"] = pd.Series(struc_dict)
         
-        return data
-
-    def __len__(self):
-        return len(self.dataframe)
-
-    def __getitem__(self, idx):
-        return self.dataframe.loc[idx]
-
-    def to_numpy(self):
-        return self.dataframe.to_numpy()
-
-    def to_dict(self):
-        return self.dataframe.to_dict()
-
-    def keys(self):
-        return self.dataframe.keys()
-
-    def items(self):
-        return self.dataframe.items()
-
-    def iterrows(self):
-        return self.dataframe.iterrows()
-        
-           
+        return data          
