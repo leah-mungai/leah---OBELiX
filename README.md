@@ -2,7 +2,29 @@
 
 OBELiX (<ins>O</ins>pen solid <ins>B</ins>attery <ins>E</ins>lectrolytes with <ins>Li</ins>: an e<ins>X</ins>perimental dataset) is an dataset of 599 synthesized solid electrolyte materials and their experimentally measured room temperature ionic conductivity along with descriptors of their space group, lattice parameters, and chemical composition. It contains full crystallographic description in the form of CIF files for 321 entries.
 
-## File Download
+<h1 align="center">
+<img src="https://raw.githubusercontent.com/NRC-Mila/OBELiX/main/paper/figures/gathered.svg">
+
+
+## Python API
+
+### Installation
+
+```
+pip install obelix
+```
+
+### Usage
+
+```
+from obelix import OBELiX
+
+ob = OBELiX()
+
+print(f"The ionic conductivity of {ob[0]["Reduced Composition"]} is {ob[0]["Ionic conductivity (S cm-1)"]}")
+```
+
+## Files Download
 | File               | Links   |
 | --------           | ------- |
 | Train Dataset       | [xlsx](https://raw.githubusercontent.com/NRC-Mila/OBELiX/main/data/downloads/train.xlsx), [csv](https://raw.githubusercontent.com/NRC-Mila/OBELiX/main/data/downloads/train.csv)|
