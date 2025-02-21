@@ -2,8 +2,11 @@
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
+[tool.hatch.build.targets.wheel]
+packages = ["obelix"]
+
 [project]
-name = "obelix"
+name = "obelix-data"
 version = "1.0.1"
 dependencies = ["pandas", "pymatgen", "tqdm"]
 requires-python = ">=3.8"
