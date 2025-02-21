@@ -6,7 +6,6 @@ from pymatgen.core import Structure
 import warnings
 from tqdm import tqdm
 
-__version__ = "1.0.1"
 __commit__ = "main"
 
 class Dataset():
