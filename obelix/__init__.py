@@ -6,8 +6,8 @@ from pymatgen.core import Structure
 import warnings
 from tqdm import tqdm
 
-__version__ = "1.0.0"
-__commit__ = "2db78ff50c925b2505204f271968e02117b6b19f"
+__version__ = "1.0.1"
+__commit__ = "main"
 
 class Dataset():
     def __init__(self, dataframe):
