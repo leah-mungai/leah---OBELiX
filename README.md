@@ -12,8 +12,8 @@ A full description an analysis can be found in [our paper](https://arxiv.org/abs
 
 ### Installation
 
-```our 
-pip install obelix
+```
+pip install obelix-data
 ```
 
 ### Usage
