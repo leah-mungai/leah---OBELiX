@@ -5,8 +5,9 @@ from pathlib import Path
 from pymatgen.core import Structure
 import warnings
 from tqdm import tqdm
+import pkg_resources 
 
-__commit__ = "main"
+__version__ = pkg_resources.require("obelix")[0].version
 
 class Dataset():
     def __init__(self, dataframe):
@@ -40,10 +41,25 @@ class Dataset():
 
 
 class OBELiX(Dataset):
-    def __init__(self, data_path="./rawdata", no_cifs=False, commit_id=__commit__):
+    def __init__(self, data_path="./rawdata", no_cifs=False, commit_id=__version__+"-data"):
+        '''
+        Load the OBELiX dataset.
+        
+        Args:
+            data_path (str): Path to the data directory. If the directory does not exist, the data will be downloaded.
+            no_cifs (bool): If True, the CIFs will not be read.
+            commit_id (str): Commit ID. By default the data corresponding to the version of the package (`obelix.__version__`) will be downloaded. To use the latest realease, set `commit_id="main"`.
+
+        Attributes:
+            dataframe (pd.DataFrame): DataFrame containing the dataset.
+            train_dataset (Dataset): Dataset containing the training entries.
+            test_dataset (Dataset): Dataset containing the test entries.
+        
+        '''
+        
         self.data_path = Path(data_path)
         if not self.data_path.exists():
-            self.download_data(self.data_path)
+            self.download_data(self.data_path, commit_id=commit_id)
 
         super().__init__(self.read_data(self.data_path, no_cifs))
 
