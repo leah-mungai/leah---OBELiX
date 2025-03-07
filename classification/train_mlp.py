@@ -20,8 +20,8 @@ MODEL_PATH = BASE_PATH / "benchmark"
 cif_only = False
 xy = read_xy(DATA_PATH / "processed.csv")  # , partial=False)
 
-train_idx = [l.strip() for l in open(BASE_PATH / "train_idx.csv")][1:]
-test_idx = [l.strip() for l in open(BASE_PATH / "test_idx.csv")][1:]
+train_idx = [l.strip() for l in open(DATA_PATH / "train_idx.csv")][1:]
+test_idx = [l.strip() for l in open(DATA_PATH / "test_idx.csv")][1:]
 
 scaler = StandardScaler()
 xy["Ionic conductivity (S cm-1)"] = xy["Ionic conductivity (S cm-1)"].map(np.log10)
@@ -58,7 +58,7 @@ y_class_train = (y_train > -6)
 #y_class_train = np.select(conditions, labels)
 #
 #print(y_class_train)
-
+#
 hparams = {
     "hidden_layer_sizes": [32, 32],
     "activation": "relu",
@@ -134,21 +134,6 @@ cm_display.plot()
 RocCurveDisplay.from_predictions(y_class_train, y_scores)
 
 plt.show()
-
-
-#fpr_1, tpr_1, _ = roc_curve(y_class_train, y_pred_1)
-#fpr_2, tpr_2, _ = roc_curve(y_class_train, y_pred_2)
-
-#plt.figure(figsize=(8, 6))
-#plt.plot(fpr_1, tpr_1, label="Threshold 0.5", linestyle="-", marker="o")
-#plt.plot(fpr_2, tpr_2, label="Threshold 0.7", linestyle="--", marker="s")
-#plt.plot([0, 1], [0, 1], 'k--', label="Random Classifier")
-#plt.xlabel("False Positive Rate (FPR)")
-#plt.ylabel("True Positive Rate (TPR)")
-#plt.title("ROC Curves for Different Thresholds")
-#plt.legend()
-#plt.show()
-
 
 # plt.plot(gs.best_estimator_.loss_curve_)
 # plt.plot(gs.best_estimator_.validation_scores_)

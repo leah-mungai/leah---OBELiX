@@ -21,8 +21,8 @@ MODEL_PATH = BASE_PATH / "benchmark"
 cif_only = False
 xy = read_xy(DATA_PATH / "processed.csv")  # , partial=False)
 
-train_idx = [l.strip() for l in open(BASE_PATH / "train_idx.csv")][1:]
-test_idx = [l.strip() for l in open(BASE_PATH / "test_idx.csv")][1:]
+train_idx = [l.strip() for l in open(DATA_PATH / "train_idx.csv")][1:]
+test_idx = [l.strip() for l in open(DATA_PATH / "test_idx.csv")][1:]
 
 scaler = StandardScaler()
 xy["Ionic conductivity (S cm-1)"] = xy["Ionic conductivity (S cm-1)"].map(np.log10)
@@ -45,7 +45,17 @@ idx = np.arange(len(x_test))
 np.random.shuffle(idx)
 x_test = np.array(x_test)[idx]
 y_test = np.array(y_test)[idx]
-y_class_test = (y_test > -4)
+y_class_test = (y_test > -6)
+
+#conditions = [ 
+#    (y_test > -9) & (y_test <= -6),                 
+#    (y_test > -6) & (y_test <= -3),
+#    (y_test > -3)
+#]
+
+#labels = [0, 1, 2]
+
+#y_class_test = np.select(conditions, labels)
 
 #    "n_estimators": [50, 100, 150, 200],
 #    "max_depth": [12, 24, 36, 48, 56, 64, None],

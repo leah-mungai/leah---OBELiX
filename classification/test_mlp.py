@@ -20,8 +20,8 @@ MODEL_PATH = BASE_PATH / "benchmark"
 cif_only = False
 xy = read_xy(DATA_PATH / "processed.csv")  # , partial=False)
 
-train_idx = [l.strip() for l in open(BASE_PATH / "train_idx.csv")][1:]
-test_idx = [l.strip() for l in open(BASE_PATH / "test_idx.csv")][1:]
+train_idx = [l.strip() for l in open(DATA_PATH / "train_idx.csv")][1:]
+test_idx = [l.strip() for l in open(DATA_PATH / "test_idx.csv")][1:]
 
 scaler = StandardScaler()
 xy["Ionic conductivity (S cm-1)"] = xy["Ionic conductivity (S cm-1)"].map(np.log10)
@@ -45,7 +45,7 @@ idx = np.arange(len(x_test))
 np.random.shuffle(idx)
 x_test = np.array(x_test)[idx]
 y_test = np.array(y_test)[idx]
-y_class_test = (y_test > -4)
+y_class_test = (y_test > -6)
 
 #conditions = [ 
 #    (y_train > -9) & (y_train <= -6),                 
@@ -131,18 +131,6 @@ cm_display.plot()
 RocCurveDisplay.from_predictions(y_class_test, y_scores)
 plt.show()
 
-#fpr, tpr, thresholds = roc_curve(y_class_train, y_scores)
-#auc_score = roc_auc_score(y_class_train, y_scores)
-#print(f"AUC Score: {auc_score:.4f}")
-
-#plt.figure(figsize=(8, 6))
-#plt.plot(fpr, tpr, label=f"ROC Curve (AUC = {auc_score:.2f})")
-#plt.plot([0, 1], [0, 1], linestyle="--", color="gray")  # Random classifier line
-#plt.xlabel("False Positive Rate (FPR)")
-#plt.ylabel("True Positive Rate (TPR)")
-#plt.title("ROC Curve")
-#plt.legend()
-#plt.show()
 
 # plt.plot(gs.best_estimator_.loss_curve_)
 # plt.plot(gs.best_estimator_.validation_scores_)
