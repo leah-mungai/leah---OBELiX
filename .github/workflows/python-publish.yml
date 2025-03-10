@@ -41,11 +41,11 @@ jobs:
       - uses: stefanzweifel/git-auto-action@v5
         with:
           tagging_message: ${{ github.ref_name }}-data
-	  
+
       - name: Add data tag to current commit if no changes
         if: steps.auto-commit-action.outputs.changes_detected == 'false'
-    	uses: actions/github-script@v5
-	with:
+        uses: actions/github-script@v5
+        with:
           script: |
             github.rest.git.createRef({
               owner: context.repo.owner,
@@ -54,7 +54,7 @@ jobs:
               sha: context.sha
             })
 
-	      
+
   release-build:
     runs-on: ubuntu-latest
 
