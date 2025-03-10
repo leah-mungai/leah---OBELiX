@@ -36,14 +36,14 @@ jobs:
       - name: Update files in data/downloads
         run: |
           python data/scripts/create_realease.py
-          
-      # Commit all changed files back to the repository
-      - uses: stefanzweifel/git-auto-commit-action@v5
-      	with:
-	tagging_message: ${{ github.ref_name }}-data
 
+      # Commit all changes files back to the repository
+      - uses: stefanzweifel/git-auto-action@v5
+        with:
+          tagging_message: ${{ github.ref_name }}-data
+	  
       - name: Add data tag to current commit if no changes
-      	if: steps.auto-commit-action.outputs.changes_detected == 'false'
+        if: steps.auto-commit-action.outputs.changes_detected == 'false'
     	uses: actions/github-script@v5
 	with:
           script: |
