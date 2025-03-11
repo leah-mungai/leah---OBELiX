@@ -2,10 +2,11 @@ from parse import read_xy
 
 import numpy as np
 import pandas as pd
+import joblib
 from pathlib import Path
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import StandardScaler
-from sklearn.neural_network import MLPClassifier
+from sklearn.ensemble import RandomForestClassifier
 
 from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import mean_absolute_error, confusion_matrix, ConfusionMatrixDisplay,roc_curve, roc_auc_score, RocCurveDisplay
@@ -58,49 +59,37 @@ y_class_train = (y_train > -6)
 #y_class_train = np.select(conditions, labels)
 #
 #print(y_class_train)
-#
+
+if cif_only:
+    m_ = test_xy[test_xy["CIF"] == "Match"]
+    cm_ = test_xy[test_xy["CIF"] == "Close Match"]
+    test_xy = pd.concat([m_, cm_], axis=0)
+test_xy = test_xy.drop("CIF", axis=1)
+
+x_test = test_xy.iloc[:, :-1].to_numpy()
+y_test = test_xy.iloc[:, -1].to_numpy()
+
+idx_ = np.arange(len(x_test))
+np.random.shuffle(idx_)
+x_test = np.array(x_test)[idx_]
+y_test = np.array(y_test)[idx_]
+y_class_test = (y_test > -6)
+
 hparams = {
-    "hidden_layer_sizes": [32, 32],
-    "activation": "relu",
-    "solver": "adam",
-    "learning_rate_init": 0.01,
-    "early_stopping": True,
-    "batch_size": 32,
-    "max_iter": 1000,
-    "learning_rate": "adaptive",
-    "n_iter_no_change": 100,
+   "n_estimators": [100],
+    "max_depth": [64],
+    "max_features": ["sqrt"],
+    "min_samples_leaf": [1],
 }
 
-model = MLPClassifier(**hparams)
-
-hparams = {
-    "hidden_layer_sizes": [
-        [32, 32],
- # [16, 16],
- # [64, 64],
- # [128, 128],
- # [256, 256],
- # [32, 32, 32],
- # [16, 16, 16],
- # [64, 64, 64],
- # [128, 128, 128],
- # [256, 256, 256],
- # [32, 32, 32, 32],
- # [16, 16, 16, 16],
- # [64, 64, 64, 64],
- # [128, 128, 128, 128],
- # [256, 256, 256, 256],
- # [64, 64, 64, 64, 64],
-    ],
-    "activation": ["relu"],
-    "solver": ["adam"],
-    "learning_rate_init": [0.003],#, 0.01, 0.03, 0.1, 0.3],
-    "early_stopping": [True],
-    "batch_size": [16, 32],#, 64],
-    "max_iter": [1000],
-    "learning_rate": ["adaptive"],
-    "n_iter_no_change": [100],
+hparams_ex = {
+    "max_depth": 12,
+    "max_features": "sqrt",
+    "min_samples_leaf": 2,
+    "n_estimators": 50,
 }
+
+model = RandomForestClassifier(**hparams_ex)
 
 gs = GridSearchCV(
     estimator=model, param_grid=hparams, cv=5, scoring="neg_mean_absolute_error"
@@ -110,30 +99,49 @@ gs.fit(x_train, y_class_train)
 
 print("Best parameters:", gs.best_params_)
 print(
-    "Best MLP result:",
+    "Best RF result:",
     abs(gs.cv_results_["mean_test_score"][gs.best_index_]),
     "±",
     gs.cv_results_["std_test_score"][gs.best_index_],
 
  )
 
-y_scores = gs.best_estimator_.predict_proba(x_train)[:, 1]
+joblib.dump(gs.best_estimator_, "best_rf_model.pkl")
+
+best_rf = joblib.load("best_rf_model.pkl")
+
+y_scores = best_rf.predict_proba(x_train)[:, 1]
+
+y_scores_ = best_rf.predict_proba(x_test)[:, 1]
+
 
 custom_threshold = 0.5
 y_pred = (y_scores >= 0.5)
-
+y_pred_ = (y_scores_ >= 0.5)
 
 accuracy_train = sum((y_pred == y_class_train))/len(y_train)
 
-print(f"Training Classification Accuracy: {accuracy_train:.4f}")
+accuracy_test = sum((y_pred_ == y_class_test))/len(y_test)
 
-confusion_matrix =confusion_matrix(y_class_train, y_pred)
-cm_display = ConfusionMatrixDisplay(confusion_matrix = confusion_matrix, display_labels = [0, 1])
+print(f"Training Classification Accuracy: {accuracy_train:.4f}", f"Testing Classification Accuracy: {accuracy_test:.4f}")
+
+
+#confusion_matrix =confusion_matrix(y_class_train, y_pred)
+#cm_display = ConfusionMatrixDisplay(confusion_matrix = confusion_matrix, display_labels = [0, 1])
+
+
+confusion_matrix_ =confusion_matrix(y_class_test, y_pred_)
+cm_display = ConfusionMatrixDisplay(confusion_matrix = confusion_matrix_, display_labels = [0, 1])
 cm_display.plot()
 
-RocCurveDisplay.from_predictions(y_class_train, y_scores)
 
+#RocCurveDisplay.from_predictions(y_class_train, y_scores)
+RocCurveDisplay.from_predictions(y_class_test, y_scores_)
 plt.show()
+
+
+
+
 
 # plt.plot(gs.best_estimator_.loss_curve_)
 # plt.plot(gs.best_estimator_.validation_scores_)

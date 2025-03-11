@@ -2,6 +2,7 @@ from parse import read_xy
 
 import numpy as np
 import pandas as pd
+import joblib
 from pathlib import Path
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import StandardScaler
@@ -33,29 +34,46 @@ train_xy.iloc[:, -8:-2] = scaler.transform(train_xy.iloc[:, -8:-2])
 test_xy.iloc[:, -8:-2] = scaler.transform(test_xy.iloc[:, -8:-2])
 # both = [train_xy, test_xy]
 if cif_only:
-    m = train_xy[test_xy["CIF"] == "Match"]
-    cm = train_xy[test_xy["CIF"] == "Close Match"]
-    test_xy = pd.concat([m, cm], axis=0)
-test_xy = test_xy.drop("CIF", axis=1)
+    m = train_xy[train_xy["CIF"] == "Match"]
+    cm = train_xy[train_xy["CIF"] == "Close Match"]
+    train_xy = pd.concat([m, cm], axis=0)
+train_xy = train_xy.drop("CIF", axis=1)
 
-x_test = test_xy.iloc[:, :-1].to_numpy()
-y_test = test_xy.iloc[:, -1].to_numpy()
+x_train = train_xy.iloc[:, :-1].to_numpy()
+y_train = train_xy.iloc[:, -1].to_numpy()
 
-idx = np.arange(len(x_test))
+idx = np.arange(len(x_train))
 np.random.shuffle(idx)
-x_test = np.array(x_test)[idx]
-y_test = np.array(y_test)[idx]
-y_class_test = (y_test > -6)
+x_train = np.array(x_train)[idx]
+y_train = np.array(y_train)[idx]
+y_class_train = (y_train > -6)
 
 #conditions = [ 
 #    (y_train > -9) & (y_train <= -6),                 
 #    (y_train > -6) & (y_train <= -3),
 #    (y_train > -3)
 #]
-
+#
 #labels = [0, 1, 2]
-
+#
 #y_class_train = np.select(conditions, labels)
+#
+#print(y_class_train)
+
+if cif_only:
+    m_ = test_xy[test_xy["CIF"] == "Match"]
+    cm_ = test_xy[test_xy["CIF"] == "Close Match"]
+    test_xy = pd.concat([m_, cm_], axis=0)
+test_xy = test_xy.drop("CIF", axis=1)
+
+x_test = test_xy.iloc[:, :-1].to_numpy()
+y_test = test_xy.iloc[:, -1].to_numpy()
+
+idx_ = np.arange(len(x_test))
+np.random.shuffle(idx_)
+x_test = np.array(x_test)[idx_]
+y_test = np.array(y_test)[idx_]
+y_class_test = (y_test > -6)
 
 hparams = {
     "hidden_layer_sizes": [32, 32],
@@ -104,7 +122,7 @@ gs = GridSearchCV(
     estimator=model, param_grid=hparams, cv=5, scoring="neg_mean_absolute_error"
 )
 
-gs.fit(x_test, y_class_test)
+gs.fit(x_train, y_class_train)
 
 print("Best parameters:", gs.best_params_)
 print(
@@ -115,21 +133,41 @@ print(
 
  )
 
-y_scores = gs.best_estimator_.predict_proba(x_test)[:, 1]
+joblib.dump(gs.best_estimator_, "best_mlp_model.pkl")
 
-custom_threshold = 0.5 
+best_mlp = joblib.load("best_mlp_model.pkl")
+
+y_scores = best_mlp.predict_proba(x_train)[:, 1]
+
+y_scores_ = best_mlp.predict_proba(x_test)[:, 1]
+
+
+custom_threshold = 0.5
 y_pred = (y_scores >= 0.5)
+y_pred_ = (y_scores_ >= 0.5)
 
-accuracy_test = sum((y_pred == y_class_test))/len(y_test)
+accuracy_train = sum((y_pred == y_class_train))/len(y_train)
 
-print(f"Testing Classification Accuracy: {accuracy_test:.4f}")
+accuracy_test = sum((y_pred_ == y_class_test))/len(y_test)
 
-confusion_matrix =confusion_matrix(y_class_test, y_pred)
-cm_display = ConfusionMatrixDisplay(confusion_matrix = confusion_matrix, display_labels = [0, 1])
+print(f"Training Classification Accuracy: {accuracy_train:.4f}", f"Testing Classification Accuracy: {accuracy_test:.4f}")
+
+
+#confusion_matrix =confusion_matrix(y_class_train, y_pred)
+#cm_display = ConfusionMatrixDisplay(confusion_matrix = confusion_matrix, display_labels = [0, 1])
+
+
+confusion_matrix_ =confusion_matrix(y_class_test, y_pred_)
+cm_display = ConfusionMatrixDisplay(confusion_matrix = confusion_matrix_, display_labels = [0, 1])
 cm_display.plot()
 
-RocCurveDisplay.from_predictions(y_class_test, y_scores)
+
+#RocCurveDisplay.from_predictions(y_class_train, y_scores)
+RocCurveDisplay.from_predictions(y_class_test, y_scores_)
 plt.show()
+
+
+
 
 
 # plt.plot(gs.best_estimator_.loss_curve_)
