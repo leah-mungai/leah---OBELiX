@@ -32,5 +32,14 @@ def test_custom_OBELiX():
     assert obelix[0]["ID"] == "jqc"
     assert obelix["jqc"]["ID"] == "jqc"
 
-if __name__ == "__main__":
-    test_OBELiX()
+def test_round_partial():
+    from obelix import OBELiX
+    
+    obelix = OBELiX()
+    obelix_round = obelix.round_partial()
+    assert len(obelix_round) == 599
+    assert len(obelix_round.with_cifs()) == 321
+    for entry in obelix_round.with_cifs():
+        for i, site in enumerate(entry["structure"]):   
+            for k,v in site.species.as_dict().items():
+                assert round(v) == v

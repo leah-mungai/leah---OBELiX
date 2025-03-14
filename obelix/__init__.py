@@ -7,6 +7,8 @@ import warnings
 from tqdm import tqdm
 import importlib 
 
+from .utils import round_partial_occ
+
 __version__ = importlib.metadata.version("obelix-data")
 
 class Dataset():
@@ -32,12 +34,28 @@ class Dataset():
             entry_dict = entry.to_dict()
         
         return entry_dict
+
+    def __iter__(self):
+        for i in range(len(self)):
+            yield self[i]
     
     def to_numpy(self):
         return self.dataframe.to_numpy()
 
     def to_dict(self):
         return self.dataframe.to_dict()
+
+    def with_cifs(self):
+        return Dataset(self.dataframe.dropna(subset=["structure"]))
+
+    def round_partial(self):
+        structures = []
+        for i, row in self.dataframe.iterrows():
+            if row["structure"] is not None:
+                structures.append(round_partial_occ(row["structure"]))
+            else:
+                structures.append(None)
+        return Dataset(self.dataframe.assign(structure=structures))
 
 
 class OBELiX(Dataset):
