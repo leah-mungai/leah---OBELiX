@@ -5,9 +5,9 @@ from pathlib import Path
 from pymatgen.core import Structure
 import warnings
 from tqdm import tqdm
-import pkg_resources 
+import importlib 
 
-__version__ = pkg_resources.require("obelix")[0].version
+__version__ = importlib.metadata.version("obelix-data")
 
 class Dataset():
     def __init__(self, dataframe):
@@ -41,70 +41,99 @@ class Dataset():
 
 
 class OBELiX(Dataset):
-    def __init__(self, data_path="./rawdata", no_cifs=False, commit_id=__version__+"-data"):
+    '''
+    OBELiX dataset class.
+    
+    Attributes:
+        dataframe (pd.DataFrame): DataFrame containing the dataset.
+        train_dataset (Dataset): Dataset containing the training entries.
+        test_dataset (Dataset): Dataset containing the test entries.
+        entries (list): List of entries.
+    '''
+
+    def __init__(self, data_path="./rawdata", no_cifs=False, commit_id=f"v{__version__}-data", dev=False):
         '''
-        Load the OBELiX dataset.
+        Loads the OBELiX dataset.
         
         Args:
             data_path (str): Path to the data directory. If the directory does not exist, the data will be downloaded.
             no_cifs (bool): If True, the CIFs will not be read.
             commit_id (str): Commit ID. By default the data corresponding to the version of the package (`obelix.__version__`) will be downloaded. To use the latest realease, set `commit_id="main"`.
-
-        Attributes:
-            dataframe (pd.DataFrame): DataFrame containing the dataset.
-            train_dataset (Dataset): Dataset containing the training entries.
-            test_dataset (Dataset): Dataset containing the test entries.
         
         '''
         
         self.data_path = Path(data_path)
         if not self.data_path.exists():
-            self.download_data(self.data_path, commit_id=commit_id)
+            self.download_data(self.data_path, commit_id=commit_id, dev=dev)
 
         super().__init__(self.read_data(self.data_path, no_cifs))
 
-        test = pd.read_csv(self.data_path / "test.csv", index_col="ID")
+        if (self.data_path / "test.csv").exists():
+            test = pd.read_csv(self.data_path / "test.csv", index_col="ID")
+        else:
+            test = pd.read_csv(self.data_path / "test_idx.csv", index_col="ID")
 
         self.train_dataset = Dataset(self.dataframe[~self.dataframe.index.isin(test.index)])
         
         self.test_dataset = Dataset(self.dataframe[self.dataframe.index.isin(test.index)])
         
-    def download_data(self, output_path, commit_id=None):
-        print("Downloading data...", end="")
+    def download_data(self, output_path, commit_id=None, dev=False):
         output_path = Path(output_path)
-        output_path.mkdir(exist_ok=True)
+        if dev:
+            from git import Repo
+            print("Development mode: cloning the private repository...")
+            Repo.clone_from("git@github.com:NRC-Mila/private-OBELiX.git", output_path)
 
-        if commit_id is None:
-            commit_id = "main"
+            xlsx_url = "https://github.com/NRC-Mila/OBELiX/raw/refs/heads/main/data/raw.xlsx"
+            df = pd.read_excel(xlsx_url, index_col="ID")
+            df.to_csv(output_path / "all.csv")
+            
+            test_csv_url = "https://github.com/NRC-Mila/OBELiX/raw/refs/heads/main/data/test_idx.csv"
+            df = pd.read_csv(test_csv_url, index_col="ID")
+            df.to_csv(output_path / "test.csv")
+            
+        else:
+            print("Downloading data...", end="")
+            output_path.mkdir(exist_ok=True)
+            
+            if commit_id is None:
+                commit_id = "main"
 
-        tar_url = f"https://raw.githubusercontent.com/NRC-Mila/OBELiX/{commit_id}/data/downloads/all_cifs.tar.gz"
-
-        fileobj = urllib.request.urlopen(tar_url)
-        tar = tarfile.open(fileobj=fileobj, mode="r|gz")
-        tar.extractall(output_path)
-
-        csv_url = f"https://raw.githubusercontent.com/NRC-Mila/OBELiX/{commit_id}/data/downloads/all.csv"
-        df = pd.read_csv(csv_url, index_col="ID")
-        df.to_csv(output_path / "all.csv")
-
-        test_csv_url = f"https://raw.githubusercontent.com/NRC-Mila/OBELiX/{commit_id}/data/downloads/test.csv"
-        df = pd.read_csv(test_csv_url, index_col="ID")
-        df.to_csv(output_path / "test.csv")
-        
-        print("Done.")
+            tar_url = f"https://raw.githubusercontent.com/NRC-Mila/OBELiX/{commit_id}/data/downloads/all_cifs.tar.gz"
+            
+            fileobj = urllib.request.urlopen(tar_url)
+            tar = tarfile.open(fileobj=fileobj, mode="r|gz")
+            tar.extractall(output_path, filter="data")
+            
+            csv_url = f"https://raw.githubusercontent.com/NRC-Mila/OBELiX/{commit_id}/data/downloads/all.csv"
+            df = pd.read_csv(csv_url, index_col="ID")
+            df.to_csv(output_path / "all.csv")
+            
+            test_csv_url = f"https://raw.githubusercontent.com/NRC-Mila/OBELiX/{commit_id}/data/downloads/test.csv"
+            df = pd.read_csv(test_csv_url, index_col="ID")
+            df.to_csv(output_path / "test.csv")
+            
+            print("Done.")
         
     def read_data(self, data_path, no_cifs=False):
-        
-        data = pd.read_csv(self.data_path / "all.csv", index_col="ID")
 
+        try:
+            data = pd.read_csv(self.data_path / "all.csv", index_col="ID")
+        except FileNotFoundError:
+            data = pd.read_excel(self.data_path / "raw.xlsx", index_col="ID")
+            
         if no_cifs:
             return data
-        
-        cif_path = Path(data_path) / "all_randomized_cifs"
-        
+
+        if (Path(data_path) / "anon_cifs").exists():
+            cif_path = Path(data_path) / "anon_cifs"
+            print("Reading original CIFs...")
+        else:
+            cif_path = Path(data_path) / "all_randomized_cifs"
+            print("Reading randomized CIFs...")
+            
         struc_dict = {}
             
-        print("Reading CIFs...")
         for i, row in tqdm(data.iterrows(), total=len(data)):
 
             filename = (cif_path / i).with_suffix(".cif")
