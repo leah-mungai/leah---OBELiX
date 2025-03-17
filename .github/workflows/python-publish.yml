@@ -38,7 +38,7 @@ jobs:
           python data/scripts/create_realease.py
 
       # Commit all changes files back to the repository
-      - uses: stefanzweifel/git-auto-action@v5
+      - uses: stefanzweifel/git-auto-commit-action@v5
         with:
           tagging_message: ${{ github.ref_name }}-data
 
