@@ -34,13 +34,13 @@ from obelix import OBELiX
 
 ob = OBELiX()
 
-print(f"The ionic conductivity of {ob[0]["Reduced Composition"]} is {ob[0]["Ionic conductivity (S cm-1)"]}")
+print(f"The ionic conductivity of {ob[0]['Reduced Composition']} is {ob[0]['Ionic conductivity (S cm-1)']}")
 ```
 
 Print all the labels and IDs:
 
 ```
-print("Column labels:" ob.labels)
+print("Column labels:", ob.labels)
 print("Entry IDs:", ob.entries)
 ```
 
@@ -48,15 +48,14 @@ Use the entry ID to get information about it
 ```
 print(f"The ID of the first entry is {ob.entries[0]}")
 
-print(f"The ionic conductivity of {ob["jqc"]["Reduced Composition"]} is {ob["jqc"]["Ionic conductivity (S cm-1)"]}")
-
+print(f"The ionic conductivity of {ob['jqc']['Reduced Composition']} is {ob['jqc']['Ionic conductivity (S cm-1)']}")
 ```
 
 Plot the distribution of ionic conductivities in the train set:
 
 ```
 import numpy as np
-import matplotlib pyplot as plt
+import matplotlib.pyplot as plt
 
 np.log10(ob.train_dataset.dataframe["Ionic conductivity (S cm-1)"]).plot.hist()
 plt.show()
@@ -72,7 +71,7 @@ Round partial occupancies of all CIF files and save them in a folder named `np_c
 ```
 from pathlib import Path
 
-output_path = np_cifs
+output_path = "np_cifs"
 output_path.mkdir(exist_ok=True)
 
 for entry in ob.round_partial().with_cifs():
