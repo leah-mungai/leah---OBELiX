@@ -16,3 +16,13 @@ def round_partial_occ(structure):
                 to_remove.append(i)
     structure.remove_sites(to_remove)
     return structure
+
+def replace_text_IC(cond, value=1e-15):
+    if cond == '<1E-10' or cond == '<1E-8':
+        return value
+    else:
+        try:
+            return float(cond)
+        except ValueError:
+            print("WARNING: IC is not a float:", cond)
+    return cond

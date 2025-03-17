@@ -7,25 +7,6 @@ A full description an analysis can be found in [our paper](https://arxiv.org/abs
 <h1 align="center">
 <img src="https://raw.githubusercontent.com/NRC-Mila/OBELiX/main/paper/figures/gathered.svg">
 
-
-## Python API
-
-### Installation
-
-```
-pip install obelix-data
-```
-
-### Usage
-
-```
-from obelix import OBELiX
-
-ob = OBELiX()
-
-print(f"The ionic conductivity of {ob[0]["Reduced Composition"]} is {ob[0]["Ionic conductivity (S cm-1)"]}")
-```
-
 ## Files Download
 | File               | Links   |
 | --------           | ------- |
@@ -35,6 +16,69 @@ print(f"The ionic conductivity of {ob[0]["Reduced Composition"]} is {ob[0]["Ioni
 | Test CIF files      | [zip](https://raw.githubusercontent.com/NRC-Mila/OBELiX/main/data/downloads/test_cifs.zip), [tar.gz](https://raw.githubusercontent.com/NRC-Mila/OBELiX/main/data/downloads/test_cifs.tar.gz)    |
 | Full Dataset       | [xlsx](https://raw.githubusercontent.com/NRC-Mila/OBELiX/main/data/downloads/all.xlsx), [csv](https://raw.githubusercontent.com/NRC-Mila/OBELiX/main/data/downloads/all.csv)|
 | All CIF files      | [zip](https://raw.githubusercontent.com/NRC-Mila/OBELiX/main/data/downloads/all_cifs.zip), [tar.gz](https://raw.githubusercontent.com/NRC-Mila/OBELiX/main/data/downloads/all_cifs.tar.gz)    |
+
+## Python API
+
+### Installation
+
+```
+pip install obelix-data
+```
+
+### Examples
+
+Print the composition and ionic conductivity of the first entry
+
+```
+from obelix import OBELiX
+
+ob = OBELiX()
+
+print(f"The ionic conductivity of {ob[0]["Reduced Composition"]} is {ob[0]["Ionic conductivity (S cm-1)"]}")
+```
+
+Print all the labels and IDs:
+
+```
+print("Column labels:" ob.labels)
+print("Entry IDs:", ob.entries)
+```
+
+Use the entry ID to get information about it
+```
+print(f"The ID of the first entry is {ob.entries[0]}")
+
+print(f"The ionic conductivity of {ob["jqc"]["Reduced Composition"]} is {ob["jqc"]["Ionic conductivity (S cm-1)"]}")
+
+```
+
+Plot the distribution of ionic conductivities in the train set:
+
+```
+import numpy as np
+import matplotlib pyplot as plt
+
+np.log10(ob.train_dataset.dataframe["Ionic conductivity (S cm-1)"]).plot.hist()
+plt.show()
+```
+
+Print the entries in the test dataset that have a CIF file:
+```
+print(ob.test_dataset.with_cifs().entries)
+```
+
+Round partial occupancies of all CIF files and save them in a folder named `np_cifs`
+
+```
+from pathlib import Path
+
+output_path = np_cifs
+output_path.mkdir(exist_ok=True)
+
+for entry in ob.round_partial().with_cifs():
+    entry["structure"].to(output_path+entry["ID"]+".cif")
+
+```
 
 ## Labels and Features
 

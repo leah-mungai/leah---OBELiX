@@ -7,11 +7,27 @@ import warnings
 from tqdm import tqdm
 import importlib 
 
-from .utils import round_partial_occ
+from .utils import round_partial_occ, replace_text_IC
 
 __version__ = importlib.metadata.version("obelix-data")
 
 class Dataset():
+    '''
+    Dataset class. This is a wrapper around a pandas DataFrame (which cannot be inhertided).
+
+    Attributes:
+        dataframe (pd.DataFrame): DataFrame containing the dataset.
+        entries (list): List of entry IDs (3 lower-case alphanumeric symbols).
+        labels (list): List of labels (columns).
+
+    Methods:
+        to_numpy(): Returns the dataset as a numpy array.
+        to_dict(): Returns the dataset as a dictionary.
+        with_cifs(): Returns a new Dataset object with only the entries that have a CIF.
+        round_partial(): Returns a new Datset where the partial occupancies of the sites in the structures are rounded to the nearest integer.
+
+    '''
+    
     def __init__(self, dataframe):
         self.dataframe = dataframe
         self.entries = list(self.dataframe.index)
@@ -69,22 +85,28 @@ class OBELiX(Dataset):
         entries (list): List of entries.
     '''
 
-    def __init__(self, data_path="./rawdata", no_cifs=False, commit_id=f"v{__version__}-data", dev=False):
+    def __init__(self, data_path="./rawdata", no_cifs=False, commit_id=f"v{__version__}-data", dev=False, unspecified_low_value=1e-15):
         '''
         Loads the OBELiX dataset.
         
         Args:
             data_path (str): Path to the data directory. If the directory does not exist, the data will be downloaded.
-            no_cifs (bool): If True, the CIFs will not be read.
+            no_cifs (bool): If True, the CIFs will not be read. Default: False
             commit_id (str): Commit ID. By default the data corresponding to the version of the package (`obelix.__version__`) will be downloaded. To use the latest realease, set `commit_id="main"`.
-        
+            dev (bool): If True, the data will be downloaded from the private repository. Default: False
+            unspecified_low_value (float): Value to replace "<1E-10" and "<1E-8" in the "Ionic conductivity (S cm-1)" column. If None, the values will not be replaced. Default: 1e-15
         '''
         
         self.data_path = Path(data_path)
         if not self.data_path.exists():
             self.download_data(self.data_path, commit_id=commit_id, dev=dev)
 
-        super().__init__(self.read_data(self.data_path, no_cifs))
+        df = self.read_data(self.data_path, no_cifs)
+
+        if unspecified_low_value is not None:
+            df["Ionic conductivity (S cm-1)"] = df["Ionic conductivity (S cm-1)"].apply(replace_text_IC, args=(unspecified_low_value,))
+            
+        super().__init__(df)
 
         if (self.data_path / "test.csv").exists():
             test = pd.read_csv(self.data_path / "test.csv", index_col="ID")
