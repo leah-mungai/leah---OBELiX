@@ -190,4 +190,56 @@ class OBELiX(Dataset):
 
         data["structure"] = pd.Series(struc_dict)
         
-        return data          
+        return data    
+
+class LiIon(Dataset):
+    '''
+    LiIon dataset class (inherits from Dataset).
+    '''
+
+    def __init__(self, data_path="./lilon_data"):
+        '''
+        Downloads and loads the LiIon dataset and initializes it as a Dataset.
+        
+        Args:
+            data_path (str): Path where the data will be stored.
+        '''
+        self.data_path = Path(data_path)
+        self.data_path.mkdir(exist_ok=True)
+
+        self.dataset_url = "https://raw.githubusercontent.com/NRC-Mila/OBELiX/main/data/misc/LiIonDatabase.csv"
+        self.data_file = self.data_path / "LiIonDatabase.csv"
+
+        # Download the CSV if not present
+        if not self.data_file.exists():
+            print("Downloading LiIon dataset...")
+            urllib.request.urlretrieve(self.dataset_url, self.data_file)
+            print("Download complete.")
+
+        # Load dataset
+        df = pd.read_csv(self.data_file)
+
+        # Call the parent Dataset initializer
+        super().__init__(df)
+
+    def remove_existing_from_obelix(self, obelix_dataset):
+        '''
+        Removes entries from LiIon dataset that are already present in OBELiX dataset.
+
+        Args:
+            obelix_dataset (OBELiX): An instance of the OBELiX dataset.
+
+        Returns:
+            Dataset: A new Dataset object with filtered data.
+        '''
+        obelix_compositions = obelix_dataset.dataframe["True Composition"].unique()
+        filtered_df = self.dataframe[~self.dataframe["composition"].isin(obelix_compositions)]
+        return Dataset(filtered_df)  # Return as Dataset object
+
+    def save_filtered(self,  out_file="filtered_LiIonDatabase.csv"):
+        '''
+        Save a filtered Dataset to CSV.
+        '''
+        self.dataframe.to_csv(self.data_path / out_file, index=False)
+
+
