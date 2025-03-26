@@ -8,7 +8,13 @@ import matplotlib.pyplot as plt
 from sklearn.preprocessing import StandardScaler
 from sklearn.neural_network import MLPClassifier
 
-from sklearn.model_selection import GridSearchCV
+from sklearn.experimental import enable_halving_search_cv # noqa
+
+from sklearn.model_selection import HalvingGridSearchCV, train_test_split
+
+
+
+#from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import mean_absolute_error, confusion_matrix, ConfusionMatrixDisplay,roc_curve, roc_auc_score, RocCurveDisplay
 
 
@@ -29,16 +35,6 @@ xy["Ionic conductivity (S cm-1)"] = xy["Ionic conductivity (S cm-1)"].map(np.log
 
 train_xy = xy.loc[train_idx]
 test_xy = xy.loc[test_idx]
-
-pd.set_option('display.max_columns', None)
-pd.set_option('display.width', None)
-print(train_xy)
-
-train_xy.to_csv("train_XY.csv", index=False)
-
-#print(train_xy)
-#train_xy.to_csv("train_xy.csv", index=False)
-
 scaler = scaler.fit(train_xy.iloc[:, -8:-2])
 train_xy.iloc[:, -8:-2] = scaler.transform(train_xy.iloc[:, -8:-2])
 test_xy.iloc[:, -8:-2] = scaler.transform(test_xy.iloc[:, -8:-2])
@@ -95,39 +91,28 @@ y_class_test = (y_test > -6)
 #y_class_test = np.select(conditions, labels)
 #
 
-hparams = {
-    "hidden_layer_sizes": [32, 32],
-    "activation": "relu",
-    "solver": "adam",
-    "learning_rate_init": 0.01,
-    "early_stopping": True,
-    "batch_size": 32,
-    "max_iter": 1000,
-    "learning_rate": "adaptive",
-    "n_iter_no_change": 100,
-}
 
-model = MLPClassifier(**hparams)
+model = MLPClassifier()
 
 hparams = {
     "hidden_layer_sizes": [
         [32, 32],
-#  [16, 16],
-#  [64, 64],
-#  [128, 128],
-#  [256, 256],
-#  [32, 32, 32],
-#  [16, 16, 16],
-#  [64, 64, 64],
-#  [128, 128, 128],
-#  [256, 256, 256],
-#  [32, 32, 32, 32],
-#  [16, 16, 16, 16],
-#  [64, 64, 64, 64],
+  [16, 16],
+  [64, 64],
+  [128, 128],
+  [256, 256],
+  [32, 32, 32],
+  [16, 16, 16],
+  [64, 64, 64],
+  [128, 128, 128],
+  [256, 256, 256],
+  [32, 32, 32, 32],
+  [16, 16, 16, 16],
+  [64, 64, 64, 64],
 #  [128, 128, 128, 128],
 #  [256, 256, 256, 256],
 #  [64, 64, 64, 64, 64],
-    ],
+   ],
     "activation": ["relu"],
     "solver": ["adam"],
     "learning_rate_init": [0.003],#, 0.01, 0.03, 0.1, 0.3],
@@ -139,62 +124,62 @@ hparams = {
 }
 
 
-gs = GridSearchCV(
-    estimator=model, param_grid=hparams, cv=5, scoring="neg_mean_absolute_error"
+halving_cv = HalvingGridSearchCV(
+    estimator=model, param_grid=hparams, cv=5, factor=3, scoring="neg_mean_absolute_error"
 )
 
-gs.fit(x_train, y_class_train)
+halving_cv.fit(x_train, y_class_train)
 
-print("Best parameters:", gs.best_params_)
+print("Best parameters:", halving_cv.best_params_)
 print(
     "Best MLP result:",
-    abs(gs.cv_results_["mean_test_score"][gs.best_index_]),
+    abs(halving_cv.cv_results_["mean_test_score"][halving_cv.best_index_]),
     "±",
-    gs.cv_results_["std_test_score"][gs.best_index_],
+    halving_cv.cv_results_["std_test_score"][halving_cv.best_index_],
 
  )
 
-joblib.dump(gs.best_estimator_, "best_mlp_model.pkl")
-
-best_mlp = joblib.load("best_mlp_model.pkl")
-
-y_pred_train = best_mlp.predict(x_train)
-
-y_pred_test = best_mlp.predict(x_test)
-
-#y_scores = best_mlp.predict_proba(x_train)[:, 1]
-
-#y_scores_ = best_mlp.predict_proba(x_test)[:, 1]
-
-custom_threshold = 0.5
-#y_pred = (y_scores >= 0.5)
-#y_pred_ = (y_scores_ >= 0.5)
-
-accuracy_train = sum((y_pred_train == y_class_train))/len(y_train)
-
-accuracy_test = sum((y_pred_test == y_class_test))/len(y_test)
-
-print(f"Training Classification Accuracy: {accuracy_train:.4f}", f"Testing Classification Accuracy: {accuracy_test:.4f}")
-
-
-#confusion_matrix_1 =confusion_matrix(y_class_train, y_pred_train)
-#cm_display_1 = ConfusionMatrixDisplay(confusion_matrix = confusion_matrix_1, display_labels = [0, 1, 2])
-#cm_display_1.plot()
-
-
-confusion_matrix_2 =confusion_matrix(y_class_test, y_pred_test)
-cm_display_2 = ConfusionMatrixDisplay(confusion_matrix = confusion_matrix_2, display_labels = [0, 1])
-cm_display_2.plot()
-
-#plt.savefig("confusion_matrix_MLP.png", dpi=300)
-
-#RocCurveDisplay.from_predictions(y_class_train, y_scores)
-#RocCurveDisplay.from_predictions(y_class_test, y_scores_)
-plt.show()
-
-
-
-
+#joblib.dump(gs.best_estimator_, "best_mlp_model.pkl")
+#
+#best_mlp = joblib.load("best_mlp_model.pkl")
+#
+#y_pred_train = best_mlp.predict(x_train)
+#
+#y_pred_test = best_mlp.predict(x_test)
+#
+##y_scores = best_mlp.predict_proba(x_train)[:, 1]
+#
+##y_scores_ = best_mlp.predict_proba(x_test)[:, 1]
+#
+#custom_threshold = 0.5
+##y_pred = (y_scores >= 0.5)
+##y_pred_ = (y_scores_ >= 0.5)
+#
+#accuracy_train = sum((y_pred_train == y_class_train))/len(y_train)
+#
+#accuracy_test = sum((y_pred_test == y_class_test))/len(y_test)
+#
+#print(f"Training Classification Accuracy: {accuracy_train:.4f}", f"Testing Classification Accuracy: {accuracy_test:.4f}")
+#
+#
+##confusion_matrix_1 =confusion_matrix(y_class_train, y_pred_train)
+##cm_display_1 = ConfusionMatrixDisplay(confusion_matrix = confusion_matrix_1, display_labels = [0, 1, 2])
+##cm_display_1.plot()
+#
+#
+#confusion_matrix_2 =confusion_matrix(y_class_test, y_pred_test)
+#cm_display_2 = ConfusionMatrixDisplay(confusion_matrix = confusion_matrix_2, display_labels = [0, 1])
+#cm_display_2.plot()
+#
+##plt.savefig("confusion_matrix_MLP.png", dpi=300)
+#
+##RocCurveDisplay.from_predictions(y_class_train, y_scores)
+##RocCurveDisplay.from_predictions(y_class_test, y_scores_)
+#plt.show()
+#
+#
+#
+#
 
 # plt.plot(gs.best_estimator_.loss_curve_)
 # plt.plot(gs.best_estimator_.validation_scores_)
